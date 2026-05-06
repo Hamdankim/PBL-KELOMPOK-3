@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import styles from "./profile.module.scss";
 import AvatarUploader from "../../components/AvatarUploader";
 import ReadOnlyField from "../../components/ReadOnlyField";

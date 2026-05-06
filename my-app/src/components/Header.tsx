@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { Sun, Moon, Droplets, ChevronDown } from "lucide-react";
 
 interface HeaderProps {
