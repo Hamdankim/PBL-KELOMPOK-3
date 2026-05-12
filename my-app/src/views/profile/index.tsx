@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import styles from "./profile.module.scss";
@@ -69,12 +70,12 @@ export default function ProfileView() {
     }
   };
 
-  if (status === "loading") return <div className={styles.container}>Memuat...</div>;
+  if (status === "loading")
+    return <div className={styles.container}>Memuat...</div>;
 
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        
         {/* SIDEBAR */}
         <div className={styles.sidebar}>
           <div className={styles.sidebarTop}>
@@ -85,10 +86,13 @@ export default function ProfileView() {
           <div className={styles.avatarSection}>
             <div className={styles.avatarWrap}>
               <div className={styles.avatarInner}>
-                <img 
-                  src={previewUrl || "/avatar-head.svg"} 
-                  alt="avatar" 
-                  className={styles.avatar} 
+                <Image
+                  src={previewUrl || "/avatar-head.svg"}
+                  alt="avatar"
+                  className={styles.avatar}
+                  width={130}
+                  height={130}
+                  unoptimized
                 />
               </div>
             </div>
@@ -97,11 +101,12 @@ export default function ProfileView() {
 
           <div className={styles.sidebarBottom}>
             <div className={styles.emailBadge}>{user?.email}</div>
-            <button 
+            <button
               onClick={() => {
-                if (isDirty && !confirm("Belum disimpan. Yakin kembali?")) return;
+                if (isDirty && !confirm("Belum disimpan. Yakin kembali?"))
+                  return;
                 router.back();
-              }} 
+              }}
               className={styles.btnBack}
             >
               Kembali
@@ -112,15 +117,15 @@ export default function ProfileView() {
         {/* CONTENT */}
         <div className={styles.content}>
           <h2 className={styles.sectionTitle}>Informasi Akun</h2>
-          
+
           {message && <div className={styles.alert}>{message}</div>}
 
           <div className={styles.field}>
             <label>Nama Lengkap</label>
-            <input 
-              type="text" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
 
@@ -132,16 +137,15 @@ export default function ProfileView() {
           />
 
           <div className={styles.formActions}>
-            <button 
-              onClick={handleSave} 
-              className={styles.btnSave} 
+            <button
+              onClick={handleSave}
+              className={styles.btnSave}
               disabled={!isDirty || isSaving}
             >
               {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ import app from "./firebase";
 import bcrypt from "bcryptjs";
 
 const db = getFirestore(app);
+export { db };
 
 // Fungsi Sign In untuk Next-Auth Credentials
 export async function signIn(email: string) {
