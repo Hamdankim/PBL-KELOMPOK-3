@@ -3,6 +3,8 @@ import { useState } from "react";
 import Header from "@/components/Header";
 import ChartKelembapan from "@/components/analytics/chartKelembapan";
 import ChartSuhu from "@/components/analytics/chartSuhu";
+import ChartHumidity from "@/components/analytics/chartHumidity";
+
 import Link from "next/link";
 import { ArrowLeft, Activity, Calendar } from "lucide-react";
 
@@ -47,6 +49,7 @@ export default function Analitik() {
 
         const newData = {
           soilMoisture: randomMoisture,
+          humidity: Math.floor(Math.random() * (90 - 30 + 1)) + 30,
           temperature: Number(randomTemp),
           pumpStatus: Math.random() > 0.5 ? "AKTIF" : "MATI",
           timestamp: targetDate,
@@ -143,6 +146,7 @@ export default function Analitik() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ChartKelembapan />
               <ChartSuhu />
+              <ChartHumidity />
             </div>
             
             <p className="mt-6 text-xs text-center text-gray-500 italic">

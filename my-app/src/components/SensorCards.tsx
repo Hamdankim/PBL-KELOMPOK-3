@@ -6,8 +6,10 @@ import { useState } from "react";
 interface SensorData {
   soilMoisture: number;
   temperature: number;
+  humidity: number;
   pumpStatus: string;
 }
+
 
 interface SensorCardsProps {
   data: SensorData;
@@ -28,7 +30,7 @@ export default function SensorCards({ data, onPumpToggle }: SensorCardsProps) {
   };
 
   return (
-    <div className="grid grid-cols-3 gap-3 mt-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-4">
       {/* Kelembaban Tanah */}
       <div className="card p-4">
         <div className="flex items-center justify-between mb-2">
@@ -72,6 +74,37 @@ export default function SensorCards({ data, onPumpToggle }: SensorCardsProps) {
               width: `${((data.temperature - 15) / 25) * 100}%`,
               background: "linear-gradient(90deg, #00c8ff, #0080ff)",
               boxShadow: "0 0 10px rgba(0,200,255,0.4)",
+              transition: "width 0.8s ease",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Kelembaban Udara */}
+      <div className="card p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
+            Kelembaban Udara
+          </p>
+          <Droplets className="w-3.5 h-3.5" style={{ color: "#3b82f6" }} />
+        </div>
+        <p
+          className="text-3xl font-bold"
+          style={{
+            color: "#3b82f6",
+            fontFamily: "'Exo 2', sans-serif",
+            textShadow: "0 0 20px rgba(59,130,246,0.35)",
+          }}
+        >
+          {data.humidity}%
+        </p>
+        <div className="mt-3 h-1.5 rounded-full" style={{ background: "var(--bg-600)" }}>
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${Math.max(0, Math.min(100, data.humidity))}%`,
+              background: "linear-gradient(90deg, #3b82f6, #60a5fa)",
+              boxShadow: "0 0 10px rgba(59,130,246,0.35)",
               transition: "width 0.8s ease",
             }}
           />

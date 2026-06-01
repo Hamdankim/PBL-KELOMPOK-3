@@ -12,6 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { generateChartData } from "@/lib/mockData";
+import HistoriKelembabanUdaraCard from "@/components/HistoriKelembabanUdaraCard";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -41,12 +42,31 @@ interface ChartSectionProps {
   data: {
     soilMoisture: number;
     temperature: number;
+    humidity?: number;
   };
 }
 
+type ChartRow = {
+  time: string;
+  kelembaban: number;
+  suhu: number;
+  kelembabanUdara: number;
+};
+
+
+
 export default function ChartSection({ data }: ChartSectionProps) {
+  type LocalChartRow = {
+    time: string;
+    kelembaban: number;
+    suhu: number;
+    kelembabanUdara: number;
+  };
+
+  const [chartData, setChartData] = useState<LocalChartRow[]>(generateChartData() as any);
+
+
   const router = useRouter();
-  const [chartData, setChartData] = useState(generateChartData());
   const latestDataRef = useRef(data);
 
   useEffect(() => {
@@ -63,6 +83,7 @@ export default function ChartSection({ data }: ChartSectionProps) {
           time: label,
           kelembaban: latestDataRef.current.soilMoisture,
           suhu: latestDataRef.current.temperature,
+          kelembabanUdara: latestDataRef.current.humidity ?? 0,
         });
         if (newData.length > 15) newData.shift();
         return newData;
@@ -80,7 +101,7 @@ export default function ChartSection({ data }: ChartSectionProps) {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
       {/* Kelembaban Chart */}
       <div className="card p-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={handleKelembapanClick}>
         <div className="flex items-center justify-between mb-4">
@@ -132,6 +153,7 @@ export default function ChartSection({ data }: ChartSectionProps) {
 
       {/* Suhu Chart */}
       <div className="card p-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={handleSuhuClick}>
+
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-xs font-semibold" style={{ color: "var(--text-primary)", fontFamily: "'Share Tech Mono', monospace" }}>
@@ -178,6 +200,55 @@ export default function ChartSection({ data }: ChartSectionProps) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </div>
+
+      {/* Kelembaban Udara Chart */}
+      <div className="card p-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => router.push("/histori-kelembaban-udara")}>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-xs font-semibold" style={{ color: "var(--text-primary)", fontFamily: "'Share Tech Mono', monospace" }}>
+              Histori Kelembaban Udara
+            </h3>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>(6 jam)</p>
+          </div>
+          <div className="w-2 h-2 rounded-full" style={{ background: "#3b82f6", boxShadow: "0 0 8px #3b82f6" }} />
+        </div>
+
+        <ResponsiveContainer width="100%" height={140}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="airGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.15)" />
+            <XAxis
+              dataKey="time"
+              tick={{ fill: "#64748b", fontSize: 9, fontFamily: "'Share Tech Mono'" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "#64748b", fontSize: 9, fontFamily: "'Share Tech Mono'" }}
+              axisLine={false}
+              tickLine={false}
+              domain={[20, 100]}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="kelembabanUdara"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              fill="url(#airGrad)"
+              dot={false}
+              activeDot={{ r: 4, fill: "#3b82f6", stroke: "none" }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      </div>
   );
 }
+
