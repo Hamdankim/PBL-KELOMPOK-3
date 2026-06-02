@@ -9,7 +9,7 @@ import {
     where,
     updateDoc,
 } from "firebase/firestore";
-import app from "./firebase";
+import app, { isFirebaseConfigured } from "./firebase";
 import bcrypt from "bcryptjs";
 
 const db = getFirestore(app);
@@ -17,6 +17,10 @@ export { db };
 
 // Fungsi Sign In untuk Next-Auth Credentials
 export async function signIn(email: string) {
+    if (!isFirebaseConfigured) {
+        return null;
+    }
+
     const q = query(collection(db, "users"), where("email", "==", email));
     const querySnapshot = await getDocs(q);
     const data = querySnapshot.docs.map((doc) => ({
@@ -28,6 +32,10 @@ export async function signIn(email: string) {
 
 // Fungsi Sign Up (Register Akun Baru)
 export async function signUp(userData: any, callback: Function) {
+    if (!isFirebaseConfigured) {
+        return callback({ status: false, message: "Firebase belum dikonfigurasi" });
+    }
+
     const q = query(collection(db, "users"), where("email", "==", userData.email));
     const snapshot = await getDocs(q);
 
@@ -51,6 +59,13 @@ export async function signUp(userData: any, callback: Function) {
 // Fungsi Login/Register otomatis via Google OAuth
 export async function loginWithOAuth(userData: any, callback: any) {
     try {
+        if (!isFirebaseConfigured) {
+            return callback({
+                status: false,
+                message: "Firebase belum dikonfigurasi",
+            });
+        }
+
         const q = query(collection(db, "users"), where("email", "==", userData.email));
         const querySnapshot = await getDocs(q);
         const data: any = querySnapshot.docs.map((doc) => ({
