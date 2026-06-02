@@ -1,0 +1,8 @@
+{
+  "eslint.workingDirectories": [
+    {
+      "directory": "my-app",
+      "changeProcessCWD": true
+    }
+  ]
+}
