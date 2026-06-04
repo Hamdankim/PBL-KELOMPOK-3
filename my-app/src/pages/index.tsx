@@ -35,6 +35,7 @@ export default function Dashboard() {
   const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
 
   const [isHydrated, setIsHydrated] = useState(false);
+  const [irrigationMode, setIrrigationMode] = useState<"AUTO" | "MANUAL">("AUTO");
 
   // State untuk threshold konfigurasi
   const [threshold, setThreshold] = useState<any>(null);
@@ -82,6 +83,10 @@ export default function Dashboard() {
           waterLevel: data.waterLevel ?? 0,
           waterLevelLCM: data.waterLevelCM ?? 0,
         });
+        // Sync auto/manual mode from realtime DB (autoMode: true => AUTO)
+        if (typeof data.autoMode !== "undefined") {
+          setIrrigationMode(data.autoMode ? "AUTO" : "MANUAL");
+        }
       }
     });
 
@@ -230,6 +235,14 @@ export default function Dashboard() {
       type: eventType as "quick" | "intensive" | "water-saving",
     };
     setIrrigationEvents((prev) => [...prev, newEvent]);
+    // Also send manual irrigation command to Realtime Database so IoT can act on it
+    try {
+      await update(ref(realtimeDb, "SmartPlant"), {
+        manualIrrigation: newEvent.duration,
+      });
+    } catch (err) {
+      console.error("Gagal mengirim perintah penyiraman manual ke Realtime DB:", err);
+    }
   };
   // --- Proteksi Login ---
   // Jika belum login, redirect langsung ke halaman login
@@ -291,7 +304,19 @@ export default function Dashboard() {
               </div>
             )}
             {/* Sensor Cards Row */}
-            <SensorCards data={sensorData} onPumpToggle={handlePumpToggle} />
+            <SensorCards
+              data={sensorData}
+              onPumpToggle={handlePumpToggle}
+              irrigationMode={irrigationMode}
+              onModeChange={async (m) => {
+                setIrrigationMode(m);
+                try {
+                  await update(ref(realtimeDb, "SmartPlant"), { autoMode: m === "AUTO" });
+                } catch (err) {
+                  console.error("Gagal mengupdate mode di Realtime DB:", err);
+                }
+              }}
+            />
 
             {/* Charts Row */}
             {isHydrated && <ChartSection data={sensorData} />}
@@ -307,11 +332,10 @@ export default function Dashboard() {
             {/* Water Availability */}
             {isHydrated && <WaterAvailability percentage={sensorData.waterLevel} />}
 
-            {/* Irrigation Modes */}
-            {isHydrated && (
+            {/* Irrigation Modes - show only in MANUAL mode */}
+            {isHydrated && irrigationMode === "MANUAL" && (
             <IrrigationModes 
               onAction={handleQuickAction} 
-              isPumpActive={sensorData.pumpStatus === "AKTIF"}
             />
             )}
           </main>

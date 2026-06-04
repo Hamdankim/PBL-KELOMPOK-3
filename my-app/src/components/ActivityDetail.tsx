@@ -41,8 +41,8 @@ export default function ActivityDetail({ logs = [] }: ActivityDetailProps) {
   const generateLogsWithTimestamps = (): LogEntry[] => {
     const now = new Date();
     const sampleMessages = [
-      { msg: "Pompa dihidupkan (AKTIF)", type: "pump" },
-      { msg: "Pompa dimatikan (NON-AKTIF)", type: "pump" },
+      { msg: "Pompa hidup", type: "pump" },
+      { msg: "Pompa mati", type: "pump" },
       { msg: "Mode penyiraman cepat diaktifkan", type: "action" },
       { msg: "Mode penyiraman intensif diaktifkan", type: "action" },
       { msg: "Mode hemat air diaktifkan", type: "action" },
