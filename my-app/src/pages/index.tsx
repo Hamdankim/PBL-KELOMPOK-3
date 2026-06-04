@@ -34,6 +34,15 @@ export default function Dashboard() {
   const [isOnline, setIsOnline] = useState(true);
   const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
 
+  // Expose latest irrigation events to ChartSection via a lightweight global
+  useEffect(() => {
+    try {
+      (window as any).__LATEST_IRR_EVENTS__ = irrigationEvents.map(ev => ({ timestamp: ev.timestamp }));
+    } catch (e) {
+      // ignore server-side or non-window environments
+    }
+  }, [irrigationEvents]);
+
   const [isHydrated, setIsHydrated] = useState(false);
   const [irrigationMode, setIrrigationMode] = useState<"AUTO" | "MANUAL">("AUTO");
 
@@ -319,7 +328,7 @@ export default function Dashboard() {
             />
 
             {/* Charts Row */}
-            {isHydrated && <ChartSection data={sensorData} />}
+            {isHydrated && <ChartSection data={sensorData} irrigationEvents={irrigationEvents} />}
 
             {/* Stats + Log Row */}
             {isHydrated && (

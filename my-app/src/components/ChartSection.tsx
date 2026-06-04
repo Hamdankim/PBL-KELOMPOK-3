@@ -9,6 +9,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceDot,
   ResponsiveContainer,
 } from "recharts";
 import { generateChartData } from "@/lib/mockData";
@@ -44,6 +45,7 @@ interface ChartSectionProps {
     temperature: number;
     humidity?: number;
   };
+  irrigationEvents?: any[];
 }
 
 type ChartRow = {
@@ -55,15 +57,29 @@ type ChartRow = {
 
 
 
-export default function ChartSection({ data }: ChartSectionProps) {
+export default function ChartSection({ data, irrigationEvents }: ChartSectionProps) {
+  // keep latest irrigation events in window for the interval to pick up
+  useEffect(() => {
+    try {
+      (window as any).__LATEST_IRR_EVENTS__ = (irrigationEvents || []).map(ev => ({ timestamp: ev.timestamp }));
+    } catch (e) {}
+  }, [irrigationEvents]);
   type LocalChartRow = {
     time: string;
     kelembaban: number;
     suhu: number;
     kelembabanUdara: number;
+    watering?: number;
   };
 
   const [chartData, setChartData] = useState<LocalChartRow[]>(generateChartData() as any);
+
+  // Keep latest irrigation events in a ref for interval checks
+  const irrigationRef = useRef<any[]>([]);
+  useEffect(() => {
+    // parent will pass irrigation events via data.irrigationEvents in future
+    // but current prop is separate; we'll read from window (fallback) if not provided
+  }, []);
 
 
   const router = useRouter();
@@ -79,12 +95,18 @@ export default function ChartSection({ data }: ChartSectionProps) {
         const newData = [...prev];
         const now = new Date();
         const label = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        // Determine if a recent irrigation event happened within last 7 seconds
+        const recentIrr = (window as any).__LATEST_IRR_EVENTS__ || [];
+        const isWatering = recentIrr.some((ev: any) => Math.abs(now.getTime() - new Date(ev.timestamp).getTime()) < 7000);
+
         newData.push({
           time: label,
           kelembaban: latestDataRef.current.soilMoisture,
           suhu: latestDataRef.current.temperature,
           kelembabanUdara: latestDataRef.current.humidity ?? 0,
-        });
+          // include watering flag for rendering marker
+          watering: isWatering ? 1 : 0,
+        } as any);
         if (newData.length > 15) newData.shift();
         return newData;
       });
@@ -147,6 +169,15 @@ export default function ChartSection({ data }: ChartSectionProps) {
               dot={false}
               activeDot={{ r: 4, fill: "#00e5a0", stroke: "none" }}
             />
+            {chartData.length > 0 && (chartData[chartData.length - 1] as any).watering === 1 && (
+              <ReferenceDot
+                x={(chartData[chartData.length - 1] as any).time}
+                y={(chartData[chartData.length - 1] as any).kelembaban}
+                r={5}
+                fill="#00e5a0"
+                stroke="rgba(0,229,160,0.6)"
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -197,6 +228,15 @@ export default function ChartSection({ data }: ChartSectionProps) {
               dot={false}
               activeDot={{ r: 4, fill: "#00c8ff", stroke: "none" }}
             />
+            {chartData.length > 0 && (chartData[chartData.length - 1] as any).watering === 1 && (
+              <ReferenceDot
+                x={(chartData[chartData.length - 1] as any).time}
+                y={(chartData[chartData.length - 1] as any).suhu}
+                r={5}
+                fill="#00c8ff"
+                stroke="rgba(0,200,255,0.6)"
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -244,6 +284,15 @@ export default function ChartSection({ data }: ChartSectionProps) {
               dot={false}
               activeDot={{ r: 4, fill: "#3b82f6", stroke: "none" }}
             />
+            {chartData.length > 0 && (chartData[chartData.length - 1] as any).watering === 1 && (
+              <ReferenceDot
+                x={(chartData[chartData.length - 1] as any).time}
+                y={(chartData[chartData.length - 1] as any).kelembabanUdara}
+                r={5}
+                fill="#3b82f6"
+                stroke="rgba(59,130,246,0.6)"
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
