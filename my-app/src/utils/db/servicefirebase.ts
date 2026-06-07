@@ -89,9 +89,14 @@ export async function getThresholdConfig() {
             return {
                 soilMoistureMin: 35,
                 soilMoistureMax: 70,
+
                 temperatureMin: 18,
                 temperatureMax: 32,
-                alertThreshold: 85,
+
+                humidityMin: 40,
+                humidityMax: 80,
+
+                waterLevelMin: 5,
             };
         }
 
@@ -102,9 +107,14 @@ export async function getThresholdConfig() {
             return {
                 soilMoistureMin: 35,
                 soilMoistureMax: 70,
+
                 temperatureMin: 18,
                 temperatureMax: 32,
-                alertThreshold: 85,
+
+                humidityMin: 40,
+                humidityMax: 80,
+
+                waterLevelMin: 5,
             };
         }
         return snap.data();
