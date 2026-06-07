@@ -5,7 +5,6 @@ import { Zap, RefreshCw, Power } from "lucide-react";
 
 interface IrrigationModesProps {
   onAction: (action: string) => void;
-  isPumpActive: boolean;
 }
 
 const irrigationModes = [
@@ -26,11 +25,10 @@ const irrigationModes = [
   },
 ];
 
-export default function IrrigationModes({ onAction, isPumpActive }: IrrigationModesProps) {
+export default function IrrigationModes({ onAction }: IrrigationModesProps) {
   const [loading, setLoading] = useState<number | null>(null);
 
   const handleClick = async (index: number, action: string) => {
-    if (!isPumpActive) return; // Prevent action if pump is not active
     setLoading(index);
     await new Promise((r) => setTimeout(r, 800));
     onAction(action);
@@ -51,14 +49,14 @@ export default function IrrigationModes({ onAction, isPumpActive }: IrrigationMo
           <button
             key={i}
             onClick={() => handleClick(i, btn.action)}
-            disabled={loading !== null || !isPumpActive}
+            disabled={loading !== null}
             className="btn-quick relative overflow-hidden"
             style={{
               background: `${btn.color}15`,
               borderColor: `${btn.color}50`,
               color: btn.color,
-              opacity: loading !== null && loading !== i ? 0.5 : !isPumpActive ? 0.4 : 1,
-              cursor: !isPumpActive ? "not-allowed" : "pointer",
+              opacity: loading !== null && loading !== i ? 0.5 : 1,
+              cursor: "pointer",
             }}
           >
             {loading === i ? (
@@ -69,7 +67,7 @@ export default function IrrigationModes({ onAction, isPumpActive }: IrrigationMo
             ) : (
               <span className="flex items-center justify-center gap-1.5">
                 <span>{btn.label}</span>
-                {!isPumpActive && <span className="text-xs">(⊘ Nonaktif)</span>}
+                {/* pump status no longer gates access to manual modes */}
               </span>
             )}
 

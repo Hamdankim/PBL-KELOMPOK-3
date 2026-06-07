@@ -1,23 +1,48 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getThresholdConfig, setThresholdConfig } from "../../utils/db/servicefirebase";
+import {
+  getThresholdConfig,
+  setThresholdConfig,
+} from "../../utils/db/servicefirebase";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  // GET konfigurasi
   if (req.method === "GET") {
     try {
       const config = await getThresholdConfig();
-      res.status(200).json(config);
+
+      return res.status(200).json(config);
     } catch (err) {
-      res.status(500).json({ error: "Gagal mengambil konfigurasi dari database." });
+      return res.status(500).json({
+        error: "Gagal mengambil konfigurasi dari database.",
+      });
     }
-  } else if (req.method === "POST" || req.method === "PUT") {
+  }
+
+  // POST / PUT konfigurasi
+  if (req.method === "POST" || req.method === "PUT") {
     try {
       await setThresholdConfig(req.body);
-      res.status(200).json({ message: "Konfigurasi berhasil disimpan", config: req.body });
+
+      return res.status(200).json({
+        success: true,
+        message: "Konfigurasi berhasil disimpan",
+        config: req.body,
+      });
     } catch (err) {
-      res.status(500).json({ error: "Gagal menyimpan konfigurasi ke database." });
+      return res.status(500).json({
+        success: false,
+        error: "Gagal menyimpan konfigurasi ke database.",
+      });
     }
-  } else {
-    res.setHeader("Allow", ["GET", "POST", "PUT"]);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
+
+  // Method tidak didukung
+  res.setHeader("Allow", ["GET", "POST", "PUT"]);
+
+  return res.status(405).json({
+    error: `Method ${req.method} tidak diizinkan`,
+  });
 }

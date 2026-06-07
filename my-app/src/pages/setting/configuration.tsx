@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { Sliders, Droplets, Thermometer, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Sliders, Droplets, Thermometer, ArrowLeft } from "lucide-react";
 import InputField from "../../components/InputField";
 import Header from "../../components/Header";
 import { defaultConfig, validateConfig } from "../../lib/configUtils";
@@ -45,6 +44,16 @@ const ConfigurationPage = () => {
     setConfig((prev) => ({ ...prev, [name]: Number(value) }));
   };
 
+  const showNotif = (
+    type: "success" | "error",
+    message: string
+  ) => {
+    setNotif({ type, message });
+
+    setTimeout(() => {
+      setNotif(null);
+    }, 3000);
+  };
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,12 +65,21 @@ const ConfigurationPage = () => {
         body: JSON.stringify(config),
       });
       if (res.ok) {
-        setNotif({ type: 'success', message: 'Konfigurasi berhasil disimpan!' });
+        showNotif(
+          "success",
+          "✓ Perubahan berhasil disimpan"
+        );
       } else {
-        setNotif({ type: 'error', message: 'Gagal menyimpan konfigurasi ke server.' });
+        showNotif(
+          "error",
+          "Gagal menyimpan konfigurasi ke server."
+        );
       }
     } catch {
-      setNotif({ type: 'error', message: 'Gagal menyimpan konfigurasi ke server.' });
+      showNotif(
+        "error",
+        "Gagal menyimpan konfigurasi ke server."
+      );
     }
   };
 
@@ -75,9 +93,15 @@ const ConfigurationPage = () => {
         body: JSON.stringify(defaultConfig),
       });
       if (res.ok) {
-        setNotif({ type: 'success', message: 'Konfigurasi dikembalikan ke default.' });
+        showNotif(
+          "success",
+          "✓ Konfigurasi dikembalikan ke default"
+        );
       } else {
-        setNotif({ type: 'error', message: 'Gagal reset konfigurasi ke server.' });
+        showNotif(
+          "error",
+          "Gagal reset konfigurasi ke server."
+        );
       }
     } catch {
       setNotif({ type: 'error', message: 'Gagal reset konfigurasi ke server.' });
@@ -95,7 +119,7 @@ const ConfigurationPage = () => {
           <Header theme={theme} onToggleTheme={toggleTheme} isOnline={isOnline} />
           <main className="flex flex-col items-center justify-center min-h-[80vh] px-2 pt-6 md:pt-10">
             <div
-              className={`w-full max-w-2xl md:max-w-3xl rounded-2xl shadow-2xl p-4 md:p-8 border transition-colors duration-300
+              className={`w-full max-w-6xl rounded-3xl shadow-2xl p-6 md:p-10 border transition-colors duration-300
                 ${theme === "dark"
                   ? "bg-[var(--card-bg)] border-[var(--border)]"
                   : "bg-white border-gray-300"
@@ -112,9 +136,21 @@ const ConfigurationPage = () => {
                 </Link>
               </div>
               {/* Judul dan Icon */}
-              <div className="flex items-center gap-3 mb-6 mt-2">
-                <Sliders className="w-7 h-7 text-[var(--primary)]" />
-                <h2 className="text-2xl font-extrabold text-[var(--primary)] tracking-wide">Konfigurasi Threshold</h2>
+              <div className="mb-6">
+                <div className="flex items-center gap-3">
+                  <Sliders className="w-8 h-8 text-[var(--primary)]" />
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-[var(--primary)] tracking-wide">
+                      Konfigurasi Sistem
+                    </h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                      <span className="text-sm text-green-400">
+                        Konfigurasi tersimpan di Firebase
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               {/* Notifikasi */}
               {notif && (
@@ -126,8 +162,42 @@ const ConfigurationPage = () => {
                   {notif.message}
                 </div>
               )}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">                
+                  <p className="text-xs text-cyan-300">Kelembapan Tanah</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {config.soilMoistureMin}% - {config.soilMoistureMax}%
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
+                  <p className="text-xs text-orange-300">Suhu</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {config.temperatureMin}° - {config.temperatureMax}°
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+                  <p className="text-xs text-blue-300">Kelembapan Udara</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    {config.humidityMin}% - {config.humidityMax}%
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <p className="text-xs text-emerald-300">Air Tangki</p>
+                  <p className="text-2xl font-bold text-white mt-1">
+                    Min {config.waterLevelMin}%
+                  </p>
+                </div>
+
+              </div>
               {/* Form konfigurasi */}
               <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+                <h3 className="text-lg font-bold text-cyan-400">
+                  Kelembapan Tanah
+                </h3>
                 <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                   <InputField
                     label="Kelembapan Tanah Minimum (%)"
@@ -156,6 +226,9 @@ const ConfigurationPage = () => {
                     max={100}
                   />
                 </div>
+                <h3 className="text-lg font-bold text-orange-400 mt-6">
+                  Suhu Lingkungan
+                </h3>
                 <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                   <InputField
                     label="Suhu Minimum (°C)"
@@ -184,16 +257,71 @@ const ConfigurationPage = () => {
                     max={100}
                   />
                 </div>
+                <h3 className="text-lg font-bold text-blue-400 mt-6">
+                  Kelembapan Udara
+                </h3>
+                <div className="flex flex-col md:flex-row gap-4 md:gap-5">
+                  <InputField
+                    label="Kelembapan Udara Minimum (%)"
+                    name="humidityMin"
+                    value={config.humidityMin}
+                    onChange={handleChange}
+                    icon={
+                      <Droplets
+                        className={`w-6 h-6 ${
+                          theme === "dark" ? "text-blue-300" : "text-blue-700"
+                        }`}
+                      />
+                    }
+                    colorClass={theme === "dark" ? "text-blue-300" : "text-blue-700"}
+                    className={
+                      theme === "dark"
+                        ? "bg-[var(--card-bg)] border-[var(--border)]"
+                        : "bg-white border-gray-300"
+                    }
+                    info="Batas minimum kelembapan udara."
+                    description="Peringatan jika udara terlalu kering."
+                    min={0}
+                    max={100}
+                  />
+
+                  <InputField
+                    label="Kelembapan Udara Maksimum (%)"
+                    name="humidityMax"
+                    value={config.humidityMax}
+                    onChange={handleChange}
+                    icon={
+                      <Droplets
+                        className={`w-6 h-6 ${
+                          theme === "dark" ? "text-blue-300" : "text-blue-700"
+                        }`}
+                      />
+                    }
+                    colorClass={theme === "dark" ? "text-blue-300" : "text-blue-700"}
+                    className={
+                      theme === "dark"
+                        ? "bg-[var(--card-bg)] border-[var(--border)]"
+                        : "bg-white border-gray-300"
+                    }
+                    info="Batas maksimum kelembapan udara."
+                    description="Peringatan jika udara terlalu lembap."
+                    min={0}
+                    max={100}
+                  />
+                </div>
+                <h3 className="text-lg font-bold text-emerald-400 mt-6">
+                  Air Tangki
+                </h3>
                 <InputField
-                  label="Ambang Batas Alert (%)"
-                  name="alertThreshold"
-                  value={config.alertThreshold}
+                  label="Ketinggian Air Tangki Minimum (%)"
+                  name="waterLevelMin"
+                  value={config.waterLevelMin}
                   onChange={handleChange}
-                  icon={<AlertTriangle className={`w-6 h-6 ${theme === "dark" ? "text-pink-300" : "text-pink-700"}`} />}
-                  colorClass={theme === "dark" ? "text-pink-300" : "text-pink-700"}
+                  icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-blue-300" : "text-blue-700"}`} />}
+                  colorClass={theme === "dark" ? "text-blue-300" : "text-blue-700"}
                   className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
-                  info="Nilai deviasi maksimum sebelum sistem memberi peringatan."
-                  description="Jika nilai melebihi ambang ini, sistem akan memberi alert."
+                  info="Pompa akan berhenti jika level air di bawah nilai ini."
+                  description="Batas minimum level air tangki."
                   min={0}
                   max={100}
                 />

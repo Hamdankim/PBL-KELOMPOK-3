@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 type Props = {
   previewUrl?: string | null;
@@ -11,7 +12,14 @@ type Props = {
   styles?: any;
 };
 
-export default function AvatarUploader({ previewUrl, onFileChange, id = "avatar-input", text = "Klik foto untuk ubah", className = "", styles = {} }: Props) {
+export default function AvatarUploader({
+  previewUrl,
+  onFileChange,
+  id = "avatar-input",
+  text = "Klik foto untuk ubah",
+  className = "",
+  styles = {},
+}: Props) {
   const avatarLabel = styles.avatarLabel || "avatarLabel";
   const avatarWrap = styles.avatarWrap || "avatarWrap";
   const avatarInner = styles.avatarInner || "avatarInner";
@@ -24,13 +32,26 @@ export default function AvatarUploader({ previewUrl, onFileChange, id = "avatar-
       <label htmlFor={id} className={avatarLabel}>
         <div className={avatarWrap}>
           <div className={avatarInner}>
-            <img src={previewUrl || "/avatar-head.svg"} alt="avatar" className={avatarImg} />
+            <Image
+              src={previewUrl || "/avatar-head.svg"}
+              alt="avatar"
+              className={avatarImg}
+              width={120}
+              height={120}
+              unoptimized
+            />
             <div className={avatarOverlay}>Ganti</div>
           </div>
         </div>
       </label>
 
-      <input id={id} type="file" accept="image/*" onChange={onFileChange} style={{ display: "none" }} />
+      <input
+        id={id}
+        type="file"
+        accept="image/*"
+        onChange={onFileChange}
+        style={{ display: "none" }}
+      />
 
       <label htmlFor={id} className={textUpload}>
         {text}

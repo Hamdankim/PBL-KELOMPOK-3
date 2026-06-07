@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-import { db } from "@/utils/db/firebase";
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  doc, 
-  updateDoc 
+import { db } from "@/utils/db/servicefirebase-server";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc
 } from "firebase/firestore";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

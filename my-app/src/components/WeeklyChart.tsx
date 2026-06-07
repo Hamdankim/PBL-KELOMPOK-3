@@ -12,10 +12,11 @@ interface DailyStatus {
 
 interface WeeklyChartProps {
   title: string;
-  dataKey: 'suhu' | 'kelembaban';
+  dataKey: 'suhu' | 'kelembaban' | 'humidity';
   unit: string;
   color: string;
 }
+
 
 export default function WeeklyChart({ title, dataKey, unit, color }: WeeklyChartProps) {
   const [chartData, setChartData] = useState<any[]>([]);
@@ -43,8 +44,10 @@ export default function WeeklyChart({ title, dataKey, unit, color }: WeeklyChart
         if (dataKey === 'suhu') {
           value = 22 + Math.sin(hour / 24 * Math.PI * 2) * 3 + Math.random() * 2;
         } else {
+          // kelembaban tanah & kelembaban udara sama-sama dalam rentang persen
           value = 55 + Math.sin(hour / 24 * Math.PI * 2) * 8 + Math.random() * 5;
         }
+
 
         dayValues.push(value);
         data.push({
@@ -111,7 +114,7 @@ export default function WeeklyChart({ title, dataKey, unit, color }: WeeklyChart
                 dot={false}
                 strokeWidth={3}
                 isAnimationActive={false}
-                name={dataKey === 'suhu' ? 'Suhu (°C)' : 'Kelembaban (%)'}
+                name={dataKey === 'suhu' ? 'Suhu (°C)' : dataKey === 'humidity' ? 'Kelembaban Udara (%)' : 'Kelembaban (%)'}
               />
             </LineChart>
           </ResponsiveContainer>

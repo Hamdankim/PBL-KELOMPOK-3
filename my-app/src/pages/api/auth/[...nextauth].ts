@@ -3,7 +3,7 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import GoogleProvider from "next-auth/providers/google";
-import { db } from "@/utils/db/firebase";
+import { db } from "@/utils/db/servicefirebase-server";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
 export const authOptions: NextAuthOptions = {

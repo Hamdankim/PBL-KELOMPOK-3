@@ -12,13 +12,17 @@ import {
     orderBy,
     limit,
 } from "firebase/firestore";
-import app from "./firebase";
+import app, { isFirebaseConfigured } from "./firebase";
 import { getDatabase as getRTDB, ref as rtdbRef, set as rtdbSet } from "firebase/database";
 
 export const db = getFirestore(app);
 
 // Ambil semua produk
 export async function retrieveProducts(collectionName: string) {
+    if (!isFirebaseConfigured) {
+        return [];
+    }
+
     const snapshot = await getDocs(collection(db, collectionName));
     const data = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -29,6 +33,10 @@ export async function retrieveProducts(collectionName: string) {
 
 // Ambil data berdasarkan ID
 export async function retrieveDataByID(collectionName: string, id: string) {
+    if (!isFirebaseConfigured) {
+        return null;
+    }
+
     const snapshot = await getDoc(doc(db, collectionName, id));
     return snapshot.data();
 }
@@ -36,6 +44,10 @@ export async function retrieveDataByID(collectionName: string, id: string) {
 // Fungsi untuk menyimpan log aktivitas
 export async function saveLog(logData: { message: string; type: string; timestamp?: Date }) {
     try {
+        if (!isFirebaseConfigured) {
+            return { status: false, message: "Firebase belum dikonfigurasi" };
+        }
+
         const logEntry = {
             ...logData,
             timestamp: logData.timestamp || new Date(),
@@ -52,6 +64,10 @@ export async function saveLog(logData: { message: string; type: string; timestam
 // Fungsi untuk mengambil log aktivitas
 export async function getLogs(limitCount: number = 100) {
     try {
+        if (!isFirebaseConfigured) {
+            return [];
+        }
+
         const q = query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(limitCount));
         const querySnapshot = await getDocs(q);
         const logs = querySnapshot.docs.map((doc) => ({
@@ -69,6 +85,21 @@ export async function getLogs(limitCount: number = 100) {
 // Ambil konfigurasi threshold (simpan di collection 'config', doc 'thresholds')
 export async function getThresholdConfig() {
     try {
+        if (!isFirebaseConfigured) {
+            return {
+                soilMoistureMin: 35,
+                soilMoistureMax: 70,
+
+                temperatureMin: 18,
+                temperatureMax: 32,
+
+                humidityMin: 40,
+                humidityMax: 80,
+
+                waterLevelMin: 5,
+            };
+        }
+
         const docRef = doc(db, "config", "thresholds");
         const snap = await getDoc(docRef);
         if (!snap.exists()) {
@@ -76,9 +107,14 @@ export async function getThresholdConfig() {
             return {
                 soilMoistureMin: 35,
                 soilMoistureMax: 70,
+
                 temperatureMin: 18,
                 temperatureMax: 32,
-                alertThreshold: 85,
+
+                humidityMin: 40,
+                humidityMax: 80,
+
+                waterLevelMin: 5,
             };
         }
         return snap.data();
@@ -91,13 +127,17 @@ export async function getThresholdConfig() {
 // Simpan atau perbarui konfigurasi threshold
 export async function setThresholdConfig(data: any) {
     try {
+        if (!isFirebaseConfigured) {
+            return { status: false, message: "Firebase belum dikonfigurasi" };
+        }
+
         const docRef = doc(db, "config", "thresholds");
         await setDoc(docRef, data, { merge: true });
-        
+
         // Simpan juga ke Realtime Database agar bisa dibaca Arduino
         const rtdbInstance = getRTDB(app);
         await rtdbSet(rtdbRef(rtdbInstance, "SmartPlant/config/thresholds"), data);
-        
+
         return { status: true };
     } catch (error: any) {
         console.error("Error setting threshold config:", error);

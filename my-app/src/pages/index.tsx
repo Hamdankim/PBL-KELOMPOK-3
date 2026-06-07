@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [sensorData, setSensorData] = useState({
     soilMoisture: 0,
     temperature: 0,
+    humidity: 0,
     pumpStatus: "NON-AKTIF",
     waterLevel: 0,
     waterLevelLCM: 0,
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
 
   const [isHydrated, setIsHydrated] = useState(false);
+  const [irrigationMode, setIrrigationMode] = useState<"AUTO" | "MANUAL">("AUTO");
 
   // State untuk threshold konfigurasi
   const [threshold, setThreshold] = useState<any>(null);
@@ -76,10 +78,15 @@ export default function Dashboard() {
         setSensorData({
           soilMoisture: data.soilMoisture ?? 0,
           temperature: data.temperature ?? 0,
+          humidity: data.humidity ?? 0,
           pumpStatus: data.pumpStatus ? "AKTIF" : "NON-AKTIF",
           waterLevel: data.waterLevel ?? 0,
           waterLevelLCM: data.waterLevelCM ?? 0,
         });
+        // Sync auto/manual mode from realtime DB (autoMode: true => AUTO)
+        if (typeof data.autoMode !== "undefined") {
+          setIrrigationMode(data.autoMode ? "AUTO" : "MANUAL");
+        }
       }
     });
 
@@ -147,35 +154,65 @@ export default function Dashboard() {
   };
 
   const handlePumpToggle = async (state: boolean) => {
+  try {
     const now = new Date();
-    const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    const message = state ? "Pompa dihidupkan (AKTIF)" : "Pompa dimatikan (NON-AKTIF)";
-    const newLog = { time: timeStr, message, type: "pump" };
+
+    const timeStr = now.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    const message = state
+      ? "Pompa dihidupkan (AKTIF)"
+      : "Pompa dimatikan (NON-AKTIF)";
+
+    const newLog = {
+      time: timeStr,
+      message,
+      type: "pump",
+    };
+
     setLogs((prev) => [newLog, ...prev].slice(0, 20));
 
-    // Simpan log ke Firebase
-    await saveLog({ message, type: "pump", timestamp: now });
+    // Simpan log ke Firestore
+    await saveLog({
+      message,
+      type: "pump",
+      timestamp: now,
+    });
 
-    // Update Realtime Database
-    const smartPlantRef = ref(realtimeDb, 'SmartPlant');
-    update(smartPlantRef, { pumpStatus: state });
+    // Kirim status pompa ke Realtime Database
+    await update(ref(realtimeDb, "SmartPlant"), {
+      pumpStatus: state,
+    });
 
-    // Update sensor data to reflect pump status change
+    // Update tampilan dashboard secara langsung
     setSensorData((prev) => ({
       ...prev,
       pumpStatus: state ? "AKTIF" : "NON-AKTIF",
     }));
 
-    // Add new irrigation event if pump is turned on
+    // Tambah event irigasi saat pompa dinyalakan
     if (state) {
       const newEvent: IrrigationEvent = {
-        timestamp: new Date(),
+        timestamp: now,
         duration: 5,
         type: "quick",
       };
+
       setIrrigationEvents((prev) => [...prev, newEvent]);
     }
-  };
+
+    console.log(
+      `Pump status berhasil dikirim ke Firebase: ${
+        state ? "AKTIF" : "NON-AKTIF"
+      }`
+    );
+  } catch (error) {
+    console.error("Gagal mengubah status pompa:", error);
+  }
+};
 
   const handleQuickAction = async (action: string) => {
     const now = new Date();
@@ -198,6 +235,14 @@ export default function Dashboard() {
       type: eventType as "quick" | "intensive" | "water-saving",
     };
     setIrrigationEvents((prev) => [...prev, newEvent]);
+    // Also send manual irrigation command to Realtime Database so IoT can act on it
+    try {
+      await update(ref(realtimeDb, "SmartPlant"), {
+        manualIrrigation: newEvent.duration,
+      });
+    } catch (err) {
+      console.error("Gagal mengirim perintah penyiraman manual ke Realtime DB:", err);
+    }
   };
   // --- Proteksi Login ---
   // Jika belum login, redirect langsung ke halaman login
@@ -231,28 +276,39 @@ export default function Dashboard() {
 
           <main className="px-4 pb-8 pt-2 max-w-7xl mx-auto" suppressHydrationWarning>
             {/* Sensor Cards Row */}
-            <SensorCards data={sensorData} onPumpToggle={handlePumpToggle} />
+            <SensorCards
+              data={sensorData}
+              onPumpToggle={handlePumpToggle}
+              irrigationMode={irrigationMode}
+              onModeChange={async (m) => {
+                setIrrigationMode(m);
+                try {
+                  await update(ref(realtimeDb, "SmartPlant"), { autoMode: m === "AUTO" });
+                } catch (err) {
+                  console.error("Gagal mengupdate mode di Realtime DB:", err);
+                }
+              }}
+            />
 
             {/* Charts Row */}
             {isHydrated && <ChartSection data={sensorData} />}
 
             {/* Stats + Log Row */}
             {isHydrated && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <IrrigationTracking irrigationData={irrigationEvents} />
-                <ActivityLog logs={logs} />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <IrrigationTracking irrigationData={irrigationEvents} />
+              <ActivityLog logs={logs} />
+            </div>
             )}
 
             {/* Water Availability */}
             {isHydrated && <WaterAvailability percentage={sensorData.waterLevel} />}
 
-            {/* Irrigation Modes */}
-            {isHydrated && (
-              <IrrigationModes 
-                onAction={handleQuickAction} 
-                isPumpActive={sensorData.pumpStatus === "AKTIF"}
-              />
+            {/* Irrigation Modes - show only in MANUAL mode */}
+            {isHydrated && irrigationMode === "MANUAL" && (
+            <IrrigationModes 
+              onAction={handleQuickAction} 
+            />
             )}
           </main>
         </div>
@@ -260,4 +316,3 @@ export default function Dashboard() {
     </>
   );
 }
-

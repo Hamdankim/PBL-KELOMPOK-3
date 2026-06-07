@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Sun, Moon, Droplets, ChevronDown } from "lucide-react";
@@ -78,9 +79,7 @@ export default function Header({
               ? "rgba(0, 229, 160, 0.1)"
               : "rgba(239, 68, 68, 0.1)",
             border: `1px solid ${
-              isOnline
-                ? "rgba(0, 229, 160, 0.3)"
-                : "rgba(239, 68, 68, 0.3)"
+              isOnline ? "rgba(0, 229, 160, 0.3)" : "rgba(239, 68, 68, 0.3)"
             }`,
           }}
         >
@@ -88,9 +87,7 @@ export default function Header({
             className="w-2 h-2 rounded-full"
             style={{
               background: isOnline ? "#00e5a0" : "#ef4444",
-              boxShadow: isOnline
-                ? "0 0 6px #00e5a0"
-                : "0 0 6px #ef4444",
+              boxShadow: isOnline ? "0 0 6px #00e5a0" : "0 0 6px #ef4444",
               animation: "pulse 2s infinite",
             }}
           />
@@ -160,7 +157,6 @@ export default function Header({
             >
               Manajemen Pengguna
             </Link>
-
           </div>
         </div>
 
@@ -184,13 +180,23 @@ export default function Header({
             <button
               onClick={() => router.push("/profile")}
               className="flex items-center gap-2 text-xs px-2.5 py-1 rounded-lg"
-              style={{ background: 'transparent', border: '1px solid var(--border)' }}
+              style={{
+                background: "transparent",
+                border: "1px solid var(--border)",
+              }}
             >
-              <img src={session.user.image || '/avatar-head.svg'} alt="avatar" className="w-6 h-6 rounded-full object-cover" />
+              <Image
+                src={session.user.image || "/avatar-head.svg"}
+                alt="avatar"
+                className="w-6 h-6 rounded-full object-cover"
+                width={24}
+                height={24}
+                unoptimized
+              />
               <span className="hidden md:block">{session.user.fullname}</span>
             </button>
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="text-xs px-2.5 py-1 rounded-lg border ml-2"
               style={{ borderColor: "#ef4444", color: "#ef4444" }}
             >
