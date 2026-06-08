@@ -14,27 +14,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Debug sementara
-console.log("Firebase Config:", firebaseConfig);
+// Cek apakah semua env Firebase tersedia
+export const isFirebaseConfigured = Object.values(firebaseConfig).every(
+  (value) => Boolean(value)
+);
 
-// Cek apakah ada env yang kosong
-if (
-  !firebaseConfig.apiKey ||
-  !firebaseConfig.authDomain ||
-  !firebaseConfig.databaseURL ||
-  !firebaseConfig.projectId ||
-  !firebaseConfig.storageBucket ||
-  !firebaseConfig.messagingSenderId ||
-  !firebaseConfig.appId
-) {
-  throw new Error(
-    "Firebase environment variables belum lengkap. Periksa file .env.local"
-  );
-}
-
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Jika app sudah ada gunakan yang lama,
+// jika belum maka inisialisasi Firebase
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getDatabase(app);
 
+export { firebaseConfig };
 export default app;
