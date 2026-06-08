@@ -216,7 +216,7 @@ export default function ChartSection({ data, irrigationEvents }: ChartSectionPro
               tick={{ fill: "#64748b", fontSize: 9, fontFamily: "'Share Tech Mono'" }}
               axisLine={false}
               tickLine={false}
-              domain={[18, 36]}
+              domain={[19, 29]}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area
@@ -272,7 +272,7 @@ export default function ChartSection({ data, irrigationEvents }: ChartSectionPro
               tick={{ fill: "#64748b", fontSize: 9, fontFamily: "'Share Tech Mono'" }}
               axisLine={false}
               tickLine={false}
-              domain={[20, 100]}
+              domain={[40, 100]}
             />
             <Tooltip content={<CustomTooltip />} />
             <Area

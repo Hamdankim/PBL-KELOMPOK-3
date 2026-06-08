@@ -1,7 +1,7 @@
 "use client";
 
 import { Droplets, Thermometer, Activity } from "lucide-react";
-import { useState } from "react";
+import type { ReactNode } from "react";
 
 interface SensorData {
   soilMoisture: number;
@@ -10,17 +10,21 @@ interface SensorData {
   pumpStatus: string;
 }
 
+
 interface SensorCardsProps {
   data: SensorData;
   onPumpToggle?: (state: boolean) => void;
   irrigationMode?: "AUTO" | "MANUAL";
   onModeChange?: (mode: "AUTO" | "MANUAL") => void;
+  manualContent?: ReactNode;
 }
 
+
 export default function SensorCards(props: SensorCardsProps) {
-  const { data, onPumpToggle, irrigationMode = "AUTO", onModeChange } = props;
+  const { data, onPumpToggle, irrigationMode = "AUTO", onModeChange, manualContent } = props;
   const isPumpActive = data.pumpStatus === "AKTIF";
   const mode = irrigationMode;
+
 
   return (
     <div className="space-y-3 mt-4">
@@ -30,7 +34,7 @@ export default function SensorCards(props: SensorCardsProps) {
         <div className="card p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
-              Status
+              Status Pompa
             </p>
             <Activity className="w-3.5 h-3.5" style={{ color: isPumpActive ? "var(--primary)" : "#ef4444" }} />
           </div>
@@ -104,7 +108,11 @@ export default function SensorCards(props: SensorCardsProps) {
         </div>
       </div>
 
+      {/* Manual controls (below Status & Mode cards) */}
+      {manualContent}
+
       {/* Bottom row: three sensor cards */}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Kelembaban Tanah */}
         <div className="card p-4">

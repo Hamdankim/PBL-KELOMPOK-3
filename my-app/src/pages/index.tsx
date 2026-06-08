@@ -325,6 +325,11 @@ export default function Dashboard() {
                   console.error("Gagal mengupdate mode di Realtime DB:", err);
                 }
               }}
+              manualContent={
+                isHydrated && irrigationMode === "MANUAL" ? (
+                  <IrrigationModes onAction={handleQuickAction} />
+                ) : null
+              }
             />
 
             {/* Charts Row */}
@@ -332,7 +337,7 @@ export default function Dashboard() {
 
             {/* Stats + Log Row */}
             {isHydrated && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 items-start">
               <IrrigationTracking irrigationData={irrigationEvents} />
               <ActivityLog logs={logs} />
             </div>
@@ -340,13 +345,6 @@ export default function Dashboard() {
 
             {/* Water Availability */}
             {isHydrated && <WaterAvailability percentage={sensorData.waterLevel} />}
-
-            {/* Irrigation Modes - show only in MANUAL mode */}
-            {isHydrated && irrigationMode === "MANUAL" && (
-            <IrrigationModes 
-              onAction={handleQuickAction} 
-            />
-            )}
           </main>
         </div>
       </div>
