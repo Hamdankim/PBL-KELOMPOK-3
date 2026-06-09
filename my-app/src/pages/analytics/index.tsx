@@ -1,5 +1,4 @@
 import Head from "next/head";
-import { useState } from "react";
 import Header from "@/components/Header";
 import ChartKelembapan from "@/components/analytics/chartKelembapan";
 import ChartSuhu from "@/components/analytics/chartSuhu";
@@ -11,18 +10,16 @@ import { ArrowLeft, Activity, Calendar } from "lucide-react";
 // Import fungsi Firestore
 import { getFirestore, collection, addDoc } from "firebase/firestore";
 import app from "@/utils/db/firebase"; 
+import { useState } from "react";
+import { useThemeMode } from "@/hooks/useThemeMode";
 
 // Inisialisasi db
 const db = getFirestore(app);
 
 export default function Analitik() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { theme, toggleTheme } = useThemeMode();
   const [isOnline] = useState(true);
   const [loadingType, setLoadingType] = useState<string | null>(null);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
 
   /**
    * Fungsi Simulasi Data:
@@ -78,7 +75,7 @@ export default function Analitik() {
         />
       </Head>
 
-      <div className={theme}>
+      <div className={theme} suppressHydrationWarning>
         <div
           className="min-h-screen transition-all duration-300"
           style={{ background: "var(--bg-900)" }}

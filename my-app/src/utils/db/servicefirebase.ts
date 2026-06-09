@@ -96,7 +96,7 @@ export async function getThresholdConfig() {
                 humidityMin: 40,
                 humidityMax: 80,
 
-                waterLevelMin: 5,
+                waterLevelMin: 15,
             };
         }
 
@@ -114,7 +114,7 @@ export async function getThresholdConfig() {
                 humidityMin: 40,
                 humidityMax: 80,
 
-                waterLevelMin: 5,
+                waterLevelMin: 15,
             };
         }
         return snap.data();
