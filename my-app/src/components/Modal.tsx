@@ -1,5 +1,4 @@
 import React, { ReactNode, useEffect } from "react";
-import { X } from "lucide-react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -61,7 +60,9 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
               e.currentTarget.style.background = 'transparent';
             }}
           >
-            <X size={18} />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </div>
         

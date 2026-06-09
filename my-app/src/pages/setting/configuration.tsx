@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { Sliders, Droplets, Thermometer, ArrowLeft } from "lucide-react";
+// Inline SVGs used instead of lucide-react to avoid SSR hydration mismatches
+import BackToDashboard from "../../components/BackToDashboard";
 import InputField from "../../components/InputField";
 import Header from "../../components/Header";
 import { defaultConfig, validateConfig } from "../../lib/configUtils";
@@ -143,14 +144,16 @@ const ConfigurationPage = () => {
               )}
               {/* Tombol Kembali */}
               <div className="mb-6">
-                <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-600)] border border-[var(--border)] text-sm text-[var(--primary)] font-semibold shadow hover:scale-105 transition-all">
-                  <ArrowLeft className="w-5 h-5" /> Dashboard
-                </Link>
+                <BackToDashboard className="bg-[var(--bg-600)] border-[var(--border)] text-sm text-[var(--primary)] shadow hover:scale-105 transition-all">
+                  Kembali ke Dashboard
+                </BackToDashboard>
               </div>
               {/* Judul dan Icon */}
               <div className="mb-6">
                 <div className="flex items-center gap-3">
-                  <Sliders className="w-8 h-8 text-[var(--primary)]" />
+                  <svg className="w-8 h-8 text-[var(--primary)]" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M4 6h14M4 12h10M4 18h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   <div>
                     <h2 className="text-3xl font-extrabold text-[var(--primary)] tracking-wide">
                       Konfigurasi Sistem
@@ -216,7 +219,9 @@ const ConfigurationPage = () => {
                     name="soilMoistureMin"
                     value={config.soilMoistureMin}
                     onChange={handleChange}
-                    icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-cyan-300" : "text-cyan-700"}`} />}
+                    icon={<svg className={`w-6 h-6 ${theme === "dark" ? "text-cyan-300" : "text-cyan-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai minimum kelembapan tanah agar irigasi aktif."
                     description="Irigasi akan aktif jika kelembapan di bawah nilai ini."
@@ -230,7 +235,9 @@ const ConfigurationPage = () => {
                     name="soilMoistureMax"
                     value={config.soilMoistureMax}
                     onChange={handleChange}
-                    icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-cyan-300" : "text-cyan-700"}`} />}
+                    icon={<svg className={`w-6 h-6 ${theme === "dark" ? "text-cyan-300" : "text-cyan-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai maksimum kelembapan tanah agar irigasi berhenti."
                     description="Irigasi akan berhenti jika kelembapan di atas nilai ini."
@@ -249,7 +256,9 @@ const ConfigurationPage = () => {
                     name="temperatureMin"
                     value={config.temperatureMin}
                     onChange={handleChange}
-                    icon={<Thermometer className={`w-6 h-6 ${theme === "dark" ? "text-orange-300" : "text-orange-700"}`} />}
+                    icon={<svg className={`w-6 h-6 ${theme === "dark" ? "text-orange-300" : "text-orange-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M14 14.76V6a2 2 0 10-4 0v8.76a4 4 0 104 0z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai suhu minimum yang diizinkan."
                     description="Sistem akan memberi peringatan jika suhu di bawah nilai ini."
@@ -263,7 +272,9 @@ const ConfigurationPage = () => {
                     name="temperatureMax"
                     value={config.temperatureMax}
                     onChange={handleChange}
-                    icon={<Thermometer className={`w-6 h-6 ${theme === "dark" ? "text-orange-300" : "text-orange-700"}`} />}
+                    icon={<svg className={`w-6 h-6 ${theme === "dark" ? "text-orange-300" : "text-orange-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M14 14.76V6a2 2 0 10-4 0v8.76a4 4 0 104 0z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai suhu maksimum yang diizinkan."
                     description="Sistem akan memberi peringatan jika suhu di atas nilai ini."
@@ -283,11 +294,9 @@ const ConfigurationPage = () => {
                     value={config.humidityMin}
                     onChange={handleChange}
                     icon={
-                      <Droplets
-                        className={`w-6 h-6 ${
-                          theme === "dark" ? "text-blue-300" : "text-blue-700"
-                        }`}
-                      />
+                      <svg className={`w-6 h-6 ${theme === "dark" ? "text-blue-300" : "text-blue-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     }
                     className={
                       theme === "dark"
@@ -308,11 +317,9 @@ const ConfigurationPage = () => {
                     value={config.humidityMax}
                     onChange={handleChange}
                     icon={
-                      <Droplets
-                        className={`w-6 h-6 ${
-                          theme === "dark" ? "text-blue-300" : "text-blue-700"
-                        }`}
-                      />
+                      <svg className={`w-6 h-6 ${theme === "dark" ? "text-blue-300" : "text-blue-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     }
                     className={
                       theme === "dark"
@@ -335,7 +342,9 @@ const ConfigurationPage = () => {
                   name="waterLevelMin"
                   value={config.waterLevelMin}
                   onChange={handleChange}
-                  icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-blue-300" : "text-blue-700"}`} />}
+                  icon={<svg className={`w-6 h-6 ${theme === "dark" ? "text-blue-300" : "text-blue-700"}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>}
                   className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                   info="Pompa akan berhenti jika level air di bawah nilai ini."
                   description="Batas minimum level air tangki."

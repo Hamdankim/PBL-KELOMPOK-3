@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Zap, RefreshCw, Power } from "lucide-react";
 
 interface IrrigationModesProps {
   onAction: (action: string) => void;
@@ -59,9 +58,11 @@ export default function IrrigationModes({ onAction }: IrrigationModesProps) {
               cursor: "pointer",
             }}
           >
-            {loading === i ? (
+              {loading === i ? (
               <span className="flex items-center justify-center gap-1">
-                <RefreshCw className="w-3 h-3 animate-spin" />
+                <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M21 12a9 9 0 11-3.36-6.36" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
                 <span>...</span>
               </span>
             ) : (

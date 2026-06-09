@@ -10,12 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import {
-  Droplets,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+// using inline svgs instead of lucide icons
 
 import {
   getFirestore,
@@ -191,20 +186,20 @@ export default function ChartHumidity() {
 
   return (
     <div
-      className="rounded-xl p-4 shadow-md text-white"
-      style={{ background: "var(--bg-800)" }}
+      className="rounded-xl p-4 shadow-md"
+      style={{ background: "var(--bg-800)", color: "var(--text-primary)" }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
           Kelembaban Udara ({timeRange === 1 ? "24 Jam" : "7 Hari"})
         </h2>
-        <div className="flex bg-gray-700 rounded-lg p-1">
+        <div className="flex rounded-lg p-1" style={{ background: "var(--bg-600)" }}>
           <button
             onClick={() => setTimeRange(1)}
             className={`px-3 py-1 text-sm rounded-md transition-colors ${
               timeRange === 1
                 ? "bg-blue-500 text-white"
-                : "text-gray-400 hover:text-white"
+                : "text-[var(--text-muted)]"
             }`}
           >
             1 Hari
@@ -214,7 +209,7 @@ export default function ChartHumidity() {
             className={`px-3 py-1 text-sm rounded-md transition-colors ${
               timeRange === 7
                 ? "bg-blue-500 text-white"
-                : "text-gray-400 hover:text-white"
+                : "text-[var(--text-muted)]"
             }`}
           >
             7 Hari
@@ -223,11 +218,11 @@ export default function ChartHumidity() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-[300px] text-gray-400">
+        <div className="flex items-center justify-center h-[300px]" style={{ color: "var(--text-muted)" }}>
           Memuat data...
         </div>
       ) : data.length === 0 ? (
-        <div className="flex items-center justify-center h-[300px] text-gray-400">
+        <div className="flex items-center justify-center h-[300px]" style={{ color: "var(--text-muted)" }}>
           Belum ada data sensor.
         </div>
       ) : (
@@ -252,9 +247,9 @@ export default function ChartHumidity() {
           </ResponsiveContainer>
 
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left" style={{ color: "var(--text-primary)" }}>
               <thead>
-                <tr className="border-b border-gray-600">
+                <tr className="border-b" style={{ borderColor: "var(--border)" }}>
                   <th className="py-2">Parameter</th>
                   <th>Nilai</th>
                 </tr>
@@ -262,39 +257,53 @@ export default function ChartHumidity() {
               <tbody>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-blue-400" />
+                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Kelembaban Tertinggi
                   </td>
                   <td>{stats.max} %</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-sky-400" />
+                    <svg className="w-4 h-4 text-sky-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Kelembaban Terendah
                   </td>
                   <td>{stats.min} %</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-blue-400" /> Rata-rata
+                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
+                    </svg>
+                    Rata-rata
                   </td>
                   <td>{stats.avg} %</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
                     {isDown ? (
-                      <TrendingDown className="w-4 h-4 text-red-400" />
+                      <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M17 13l-5 5-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     ) : (
-                      <TrendingUp className="w-4 h-4 text-green-400" />
-                    )}
-                    {' '}Tren
+                      <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M7 11l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}{' '}Tren
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
                       {isDown ? (
-                        <TrendingDown className="w-4 h-4 text-red-400" />
+                        <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="M17 13l-5 5-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       ) : (
-                        <TrendingUp className="w-4 h-4 text-green-400" />
+                        <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="M7 11l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       )}
                       {stats.change}%
                     </div>

@@ -4,8 +4,8 @@ import ChartKelembapan from "@/components/analytics/chartKelembapan";
 import ChartSuhu from "@/components/analytics/chartSuhu";
 import ChartHumidity from "@/components/analytics/chartHumidity";
 
-import Link from "next/link";
-import { ArrowLeft, Activity, Calendar } from "lucide-react";
+import BackToDashboard from "@/components/BackToDashboard";
+// Inline svgs used to avoid lucide-react hydration issues
 
 // Import fungsi Firestore
 import { getFirestore, collection, addDoc } from "firebase/firestore";
@@ -86,26 +86,16 @@ export default function Analitik() {
             isOnline={isOnline}
           />
 
-          <main className="px-4 pb-8 pt-4 max-w-7xl mx-auto text-white">
+          <main
+            className="px-4 pb-8 pt-4 max-w-7xl mx-auto"
+            style={{ color: "var(--text-primary)" }}
+          >
             {/* Header Analitik dengan Tombol Simulasi */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               
               {/* Sisi Kiri: Navigasi & Judul */}
               <div className="flex items-center gap-3">
-                <Link href="/">
-                  <button
-                    className="p-2 rounded-lg transition-all hover:scale-110"
-                    style={{
-                      background: "var(--bg-800)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <ArrowLeft
-                      className="w-4 h-4"
-                      style={{ color: "var(--primary)" }}
-                    />
-                  </button>
-                </Link>
+                <BackToDashboard className="p-2 rounded-lg transition-all hover:scale-110" style={{ background: "var(--bg-800)", border: "1px solid var(--border)" }} />
                 <h1 className="text-2xl font-bold">Analitik Sensor</h1>
               </div>
 
@@ -120,7 +110,9 @@ export default function Analitik() {
                       : "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-lg shadow-blue-900/20"
                   }`}
                 >
-                  <Activity className={`w-3 h-3 ${loadingType === "current" ? "animate-pulse" : ""}`} />
+                  <svg className={`w-3 h-3 ${loadingType === "current" ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   {loadingType === "current" ? "Mengirim..." : "Simulasi 6 Jam"}
                 </button>
 
@@ -133,7 +125,10 @@ export default function Analitik() {
                       : "bg-purple-600 hover:bg-purple-700 active:scale-95 text-white shadow-lg shadow-purple-900/20"
                   }`}
                 >
-                  <Calendar className={`w-3 h-3 ${loadingType === "history" ? "animate-pulse" : ""}`} />
+                  <svg className={`w-3 h-3 ${loadingType === "history" ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   {loadingType === "history" ? "Mengirim..." : "Simulasi 6 Hari"}
                 </button>
               </div>
@@ -146,7 +141,10 @@ export default function Analitik() {
               <ChartHumidity />
             </div>
             
-            <p className="mt-6 text-xs text-center text-gray-500 italic">
+            <p
+              className="mt-6 text-xs text-center italic"
+              style={{ color: "var(--text-muted)" }}
+            >
               *Klik simulasi untuk mengetes kalkulasi tren secara otomatis pada grafik.
             </p>
           </main>

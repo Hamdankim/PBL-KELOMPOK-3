@@ -1,6 +1,6 @@
 "use client";
 
-import { Droplets, Thermometer, Activity } from "lucide-react";
+// Inline SVGs used to avoid hydration mismatch
 import type { ReactNode } from "react";
 
 interface SensorData {
@@ -36,7 +36,9 @@ export default function SensorCards(props: SensorCardsProps) {
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
               Status Pompa
             </p>
-            <Activity className="w-3.5 h-3.5" style={{ color: isPumpActive ? "var(--primary)" : "#ef4444" }} />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden style={{ color: isPumpActive ? "var(--primary)" : "#ef4444" }}>
+              <path d="M3 12h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
 
           <p
@@ -64,7 +66,9 @@ export default function SensorCards(props: SensorCardsProps) {
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
               Mode Penyiraman
             </p>
-            <Activity className="w-3.5 h-3.5" style={{ color: mode === "MANUAL" ? "var(--primary)" : "#f59e0b" }} />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden style={{ color: mode === "MANUAL" ? "var(--primary)" : "#f59e0b" }}>
+              <path d="M3 12h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
 
           <p
@@ -120,7 +124,9 @@ export default function SensorCards(props: SensorCardsProps) {
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
               Kelembaban Tanah
             </p>
-            <Droplets className="w-3.5 h-3.5" style={{ color: "var(--primary)" }} />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden style={{ color: "var(--primary)" }}>
+              <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
 
           <p className="text-3xl font-bold glow-text" style={{ color: "var(--primary)", fontFamily: "'Exo 2', sans-serif" }}>
@@ -138,7 +144,9 @@ export default function SensorCards(props: SensorCardsProps) {
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
               Suhu Lingkungan
             </p>
-            <Thermometer className="w-3.5 h-3.5" style={{ color: "#00c8ff" }} />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden style={{ color: "#00c8ff" }}>
+              <path d="M14 14.76V6a2 2 0 10-4 0v8.76a4 4 0 104 0z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
 
           <p className="text-3xl font-bold" style={{ color: "#00c8ff", fontFamily: "'Exo 2', sans-serif", textShadow: "0 0 20px rgba(0,200,255,0.5)" }}>
@@ -164,7 +172,9 @@ export default function SensorCards(props: SensorCardsProps) {
             <p className="text-xs font-medium" style={{ color: "var(--text-muted)", fontFamily: "'Share Tech Mono', monospace" }}>
               Kelembaban Udara
             </p>
-            <Droplets className="w-3.5 h-3.5" style={{ color: "#3b82f6" }} />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden style={{ color: "#3b82f6" }}>
+              <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
 
           <p className="text-3xl font-bold" style={{ color: "#3b82f6", fontFamily: "'Exo 2', sans-serif", textShadow: "0 0 20px rgba(59,130,246,0.35)" }}>
