@@ -3,67 +3,69 @@ import Header from "@/components/Header";
 import ChartKelembapan from "@/components/analytics/chartKelembapan";
 import ChartSuhu from "@/components/analytics/chartSuhu";
 import ChartHumidity from "@/components/analytics/chartHumidity";
-
-import BackToDashboard from "@/components/BackToDashboard";
-// Inline svgs used to avoid lucide-react hydration issues
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 // Import fungsi Firestore
-import { getFirestore, collection, addDoc } from "firebase/firestore";
-import app from "@/utils/db/firebase"; 
-import { useState } from "react";
+import { getFirestore } from "firebase/firestore";
+import app, { db as realtimeDb } from "@/utils/db/firebase"; 
+import { ref, onValue } from "firebase/database";
+import { useState, useEffect, useRef } from "react";
 import { useThemeMode } from "@/hooks/useThemeMode";
 
 // Inisialisasi db
 const db = getFirestore(app);
+const OFFLINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 menit tanpa data baru = mati
 
 export default function Analitik() {
   const { theme, toggleTheme } = useThemeMode();
-  const [isOnline] = useState(true);
-  const [loadingType, setLoadingType] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [timeRange, setTimeRange] = useState<number>(1);
+  
+  const prevSensorRef = useRef<string>("");
+  const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /**
-   * Fungsi Simulasi Data:
-   * Mengirim 6 dokumen sekaligus ke Firestore dengan timestamp yang diatur mundur
-   * untuk mengetes fitur tren (6 jam lalu atau 6 hari lalu).
-   */
-  const handleSimulateData = async (type: "current" | "history") => {
-    setLoadingType(type);
-    try {
-      // Loop 6 kali untuk membuat 6 data poin sekaligus
-      for (let i = 1; i <= 6; i++) {
-        const randomMoisture = Math.floor(Math.random() * (85 - 30 + 1)) + 30;
-        const randomTemp = (Math.random() * (34 - 24) + 24).toFixed(1);
-        
-        const targetDate = new Date();
-        
-        if (type === "history") {
-          // Mundur i hari (untuk tren 7 hari)
-          targetDate.setDate(targetDate.getDate() - i);
-        } else {
-          // Mundur i jam (untuk tren 24 jam)
-          targetDate.setHours(targetDate.getHours() - i);
-        }
-
-        const newData = {
-          soilMoisture: randomMoisture,
-          humidity: Math.floor(Math.random() * (90 - 30 + 1)) + 30,
-          temperature: Number(randomTemp),
-          pumpStatus: Math.random() > 0.5 ? "AKTIF" : "NONAKTIF",
-          timestamp: targetDate,
-        };
-
-        // Simpan ke Firestore
-        await addDoc(collection(db, "sensorData"), newData);
-      }
-      
-      console.log(`Berhasil mengirim 6 data simulasi untuk ${type}`);
-    } catch (error) {
-      console.error("Error saat simulasi data:", error);
-      alert("Gagal mengirim data simulasi grup.");
-    } finally {
-      setLoadingType(null);
+  // Helper untuk reset offline timer
+  const resetOfflineTimer = () => {
+    if (offlineTimerRef.current) {
+      clearTimeout(offlineTimerRef.current);
     }
+    setIsOnline(true);
+    offlineTimerRef.current = setTimeout(() => {
+      setIsOnline(false);
+      console.log("Komponen IoT terdeteksi MATI (tidak ada data baru selama 5 menit)");
+    }, OFFLINE_TIMEOUT_MS);
   };
+
+  // Cleanup timer saat unmount
+  useEffect(() => {
+    return () => {
+      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
+    };
+  }, []);
+
+  // Listen status online/offline dari Realtime DB
+  useEffect(() => {
+    const smartPlantRef = ref(realtimeDb, 'SmartPlant');
+    const unsubSensor = onValue(smartPlantRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Deteksi perubahan data sensor untuk menentukan apakah alat aktif mengirim data
+        const fingerprint = `${data.soilMoisture}-${data.temperature}-${data.humidity}`;
+        if (fingerprint !== prevSensorRef.current) {
+          prevSensorRef.current = fingerprint;
+          resetOfflineTimer();
+        }
+      }
+    });
+
+    return () => {
+      unsubSensor();
+    };
+  }, []);
+
+
+
 
   return (
     <>
@@ -86,67 +88,67 @@ export default function Analitik() {
             isOnline={isOnline}
           />
 
-          <main
-            className="px-4 pb-8 pt-4 max-w-7xl mx-auto"
-            style={{ color: "var(--text-primary)" }}
-          >
-            {/* Header Analitik dengan Tombol Simulasi */}
+          <main className="px-4 pb-8 pt-4 max-w-7xl mx-auto text-white">
+
+            
+            {/* Header Analitik */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               
-              {/* Sisi Kiri: Navigasi & Judul */}
-              <div className="flex items-center gap-3">
-                <BackToDashboard className="p-2 rounded-lg transition-all hover:scale-110" style={{ background: "var(--bg-800)", border: "1px solid var(--border)" }} />
-                <h1 className="text-2xl font-bold">Analitik Sensor</h1>
-              </div>
+              {/* Sisi Kiri: Navigasi, Judul & Filter Global */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <Link href="/">
+                    <button
+                      className="p-2 rounded-lg transition-all hover:scale-110"
+                      style={{
+                        background: "var(--bg-800)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <ArrowLeft
+                        className="w-4 h-4"
+                        style={{ color: "var(--primary)" }}
+                      />
+                    </button>
+                  </Link>
+                  <h1 className="text-2xl font-bold">Analitik Sensor</h1>
+                </div>
 
-              {/* Sisi Kanan: Kontrol Simulasi */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleSimulateData("current")}
-                  disabled={loadingType !== null}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-                    loadingType === "current" 
-                      ? "bg-gray-600 cursor-not-allowed" 
-                      : "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-lg shadow-blue-900/20"
-                  }`}
-                >
-                  <svg className={`w-3 h-3 ${loadingType === "current" ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {loadingType === "current" ? "Mengirim..." : "Simulasi 6 Jam"}
-                </button>
-
-                <button
-                  onClick={() => handleSimulateData("history")}
-                  disabled={loadingType !== null}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-                    loadingType === "history" 
-                      ? "bg-gray-600 cursor-not-allowed" 
-                      : "bg-purple-600 hover:bg-purple-700 active:scale-95 text-white shadow-lg shadow-purple-900/20"
-                  }`}
-                >
-                  <svg className={`w-3 h-3 ${loadingType === "history" ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
-                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  {loadingType === "history" ? "Mengirim..." : "Simulasi 6 Hari"}
-                </button>
+                {/* Filter Global Rentang Waktu */}
+                <div className="flex bg-gray-800/60 backdrop-blur-sm border border-gray-700/40 rounded-lg p-0.5 shadow-sm">
+                  <button
+                    onClick={() => setTimeRange(1)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all duration-200 ${
+                      timeRange === 1
+                        ? "bg-green-500 text-white shadow"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    1 Hari
+                  </button>
+                  <button
+                    onClick={() => setTimeRange(7)}
+                    className={`px-3 py-1 text-xs font-semibold rounded-md transition-all duration-200 ${
+                      timeRange === 7
+                        ? "bg-green-500 text-white shadow"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    7 Hari
+                  </button>
+                </div>
               </div>
             </div>
+
 
             {/* Grid Grafik */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ChartKelembapan />
-              <ChartSuhu />
-              <ChartHumidity />
+              <ChartKelembapan timeRange={timeRange} />
+              <ChartSuhu timeRange={timeRange} />
+              <ChartHumidity timeRange={timeRange} />
             </div>
-            
-            <p
-              className="mt-6 text-xs text-center italic"
-              style={{ color: "var(--text-muted)" }}
-            >
-              *Klik simulasi untuk mengetes kalkulasi tren secara otomatis pada grafik.
-            </p>
+
+
           </main>
         </div>
       </div>

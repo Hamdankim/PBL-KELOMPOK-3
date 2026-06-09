@@ -10,6 +10,12 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import {
+  Droplets,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 // using inline svgs instead of lucide icons
 
 import {
@@ -19,6 +25,7 @@ import {
   where,
   orderBy,
   onSnapshot,
+  doc,
 } from "firebase/firestore";
 import app from "../../utils/db/firebase";
 
@@ -93,10 +100,29 @@ const calculateStats = (data: SensorDataType[], timeRange: number) => {
   };
 };
 
-export default function ChartHumidity() {
+interface ChartHumidityProps {
+  timeRange: number;
+}
+
+export default function ChartHumidity({ timeRange }: ChartHumidityProps) {
   const [data, setData] = useState<SensorDataType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<number>(1);
+  const [analyticsData, setAnalyticsData] = useState<any | null>(null);
+
+  useEffect(() => {
+    const docId = timeRange === 1 ? "latest_1_day" : "latest_7_days";
+    const docRef = doc(db, "sensor_analytics", docId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setAnalyticsData(docSnap.data());
+      } else {
+        setAnalyticsData(null);
+      }
+    }, (err) => {
+      console.error("Error fetching sensor_analytics:", err);
+    });
+    return () => unsubscribe();
+  }, [timeRange]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -182,7 +208,17 @@ export default function ChartHumidity() {
   }, [timeRange]);
 
   const stats = calculateStats(data, timeRange);
-  const isDown = Number(stats.change) < 0;
+
+  // Ambil data dari sensor_analytics dengan fallback ke stats lokal jika belum termuat
+  const hasAnalytics = analyticsData && analyticsData.humidity;
+  const displayStats = {
+    max: hasAnalytics ? analyticsData.humidity.highest.toFixed(1) : stats.max,
+    min: hasAnalytics ? analyticsData.humidity.lowest.toFixed(1) : stats.min,
+    avg: hasAnalytics ? analyticsData.humidity.average.toFixed(1) : stats.avg,
+    change: hasAnalytics ? analyticsData.humidity.trend.changePercent.toFixed(1) : stats.change,
+    trend: hasAnalytics ? analyticsData.humidity.trend.trend : (Number(stats.change) < 0 ? "turun" : "naik"),
+  };
+  const isDown = displayStats.trend.toLowerCase() === "turun";
 
   return (
     <div
@@ -193,28 +229,6 @@ export default function ChartHumidity() {
         <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
           Kelembaban Udara ({timeRange === 1 ? "24 Jam" : "7 Hari"})
         </h2>
-        <div className="flex rounded-lg p-1" style={{ background: "var(--bg-600)" }}>
-          <button
-            onClick={() => setTimeRange(1)}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              timeRange === 1
-                ? "bg-blue-500 text-white"
-                : "text-[var(--text-muted)]"
-            }`}
-          >
-            1 Hari
-          </button>
-          <button
-            onClick={() => setTimeRange(7)}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${
-              timeRange === 7
-                ? "bg-blue-500 text-white"
-                : "text-[var(--text-muted)]"
-            }`}
-          >
-            7 Hari
-          </button>
-        </div>
       </div>
 
       {isLoading ? (
@@ -262,51 +276,39 @@ export default function ChartHumidity() {
                     </svg>
                     Kelembaban Tertinggi
                   </td>
-                  <td>{stats.max} %</td>
-                </tr>
-                <tr>
-                  <td className="py-1 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-sky-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Kelembaban Terendah
-                  </td>
-                  <td>{stats.min} %</td>
-                </tr>
-                <tr>
-                  <td className="py-1 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
-                    </svg>
-                    Rata-rata
-                  </td>
-                  <td>{stats.avg} %</td>
-                </tr>
-                <tr>
-                  <td className="py-1 flex items-center gap-2">
-                    {isDown ? (
-                      <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path d="M17 13l-5 5-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path d="M7 11l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}{' '}Tren
-                  </td>
-                  <td>
-                    <div className="flex items-center gap-1">
-                      {isDown ? (
-                        <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                          <path d="M17 13l-5 5-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                          <path d="M7 11l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                      {stats.change}%
-                    </div>
+                   <td>{displayStats.max} %</td>
+                 </tr>
+                 <tr>
+                   <td className="py-1 flex items-center gap-2">
+                     <Droplets className="w-4 h-4 text-sky-400" />
+                     Kelembaban Terendah
+                   </td>
+                   <td>{displayStats.min} %</td>
+                 </tr>
+                 <tr>
+                   <td className="py-1 flex items-center gap-2">
+                     <BarChart3 className="w-4 h-4 text-blue-400" /> Rata-rata
+                   </td>
+                   <td>{displayStats.avg} %</td>
+                 </tr>
+                 <tr>
+                   <td className="py-1 flex items-center gap-2">
+                     {isDown ? (
+                       <TrendingDown className="w-4 h-4 text-red-400" />
+                     ) : (
+                       <TrendingUp className="w-4 h-4 text-green-400" />
+                     )}
+                     {' '}Tren
+                   </td>
+                   <td>
+                     <div className="flex items-center gap-1">
+                       {isDown ? (
+                         <TrendingDown className="w-4 h-4 text-red-400" />
+                       ) : (
+                         <TrendingUp className="w-4 h-4 text-green-400" />
+                       )}
+                       {displayStats.change}%
+                     </div>
                     <div className="text-xs text-gray-400">
                       {timeRange === 1
                         ? "dibanding 6 jam yang lalu"

@@ -31,6 +31,12 @@ export default function Header({
     hour: "2-digit",
     minute: "2-digit",
   });
+  const headerButtonStyle = {
+    height: "38px",
+    border: "1px solid var(--border)",
+    borderRadius: "12px",
+    fontFamily: "'Share Tech Mono', monospace",
+  };
 
   return (
     <header
@@ -73,16 +79,41 @@ export default function Header({
 
       {/* Right side */}
       <div className="flex items-center gap-3">
+
+        {/* Date/Time */}
+        <div className="hidden sm:flex flex-col items-end">
+          <span
+            className="text-xs font-medium"
+            style={{
+              color: theme === "dark" ? "#f3f4f6" : "#111827",
+            }}
+          >
+            {timeStr}
+          </span>
+
+          <span
+            className="text-xs"
+            style={{
+              color: theme === "dark" ? "#9ca3af" : "#6b7280",
+            }}
+          >
+            {dateStr}
+          </span>
+        </div>
         {/* Online Status */}
         <div
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+          className="flex items-center gap-1.5 px-3"
           style={{
+            ...headerButtonStyle,
             background: isOnline
               ? "rgba(0, 229, 160, 0.1)"
               : "rgba(239, 68, 68, 0.1)",
             border: `1px solid ${
-              isOnline ? "rgba(0, 229, 160, 0.3)" : "rgba(239, 68, 68, 0.3)"
+              isOnline
+                ? "rgba(0, 229, 160, 0.3)"
+                : "rgba(239, 68, 68, 0.3)"
             }`,
+            borderRadius: "9999px", // biar tetap bentuk kapsul
           }}
         >
           <span
@@ -104,25 +135,18 @@ export default function Header({
             {isOnline ? "ONLINE" : "OFFLINE"}
           </span>
         </div>
-
-        {/* Date/Time */}
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-xs">{timeStr}</span>
-          <span className="text-xs opacity-60">{dateStr}</span>
-        </div>
-
+        
         {/* Analytics */}
         <Link
           href="/analytics"
-          className="hidden md:inline-flex items-center text-xs px-2.5 py-1 rounded-lg transition-all hover:scale-105"
+          className="hidden md:inline-flex items-center justify-center px-3 text-xs transition-all hover:scale-105"
           style={{
+            ...headerButtonStyle,
             color: "var(--primary)",
-            border: "1px solid var(--border)",
             background: "rgba(0, 200, 255, 0.08)",
-            fontFamily: "'Share Tech Mono', monospace",
           }}
         >
-          Analytics
+          Analitik
         </Link>
 
         {/* Dropdown */}
@@ -130,10 +154,9 @@ export default function Header({
             <button
               className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:scale-105"
               style={{
+                ...headerButtonStyle,
                 color: "var(--primary)",
-                border: "1px solid var(--border)",
                 background: "rgba(0, 229, 160, 0.08)",
-                fontFamily: "'Share Tech Mono', monospace",
               }}
             >
               Manajemen
@@ -169,10 +192,9 @@ export default function Header({
           href="/setting/configuration"
           className="hidden md:inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:scale-105"
           style={{
+            ...headerButtonStyle,
             color: "var(--primary)",
-            border: "1px solid var(--border)",
             background: "rgba(0, 200, 255, 0.08)",
-            fontFamily: "'Share Tech Mono', monospace",
           }}
         >
           Konfigurasi
@@ -185,8 +207,8 @@ export default function Header({
               onClick={() => router.push("/profile")}
               className="flex items-center gap-2 text-xs px-2.5 py-1 rounded-lg"
               style={{
+                ...headerButtonStyle,
                 background: "transparent",
-                border: "1px solid var(--border)",
               }}
             >
               <Image
@@ -197,12 +219,48 @@ export default function Header({
                 height={24}
                 unoptimized
               />
-              <span className="hidden md:block">{session.user.fullname}</span>
+              <span
+                className="hidden md:block"
+                style={{
+                  color: theme === "dark" ? "#f3f4f6" : "#111827",
+                }}
+              >
+                {session.user.fullname}
+              </span>
+            </button>
+
+            {/* Theme */}
+            <button
+              onClick={onToggleTheme}
+              className="flex items-center justify-center"
+              style={{
+                ...headerButtonStyle,
+                width: "38px",
+                background:
+                  theme === "dark"
+                    ? "transparent"
+                    : "rgba(255,255,255,0.8)",
+              }}
+            >
+              {theme === "dark" ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
               className="text-xs px-2.5 py-1 rounded-lg border ml-2"
-              style={{ borderColor: "#ef4444", color: "#ef4444" }}
+              style={{
+                ...headerButtonStyle,
+                border: "1px solid #ef4444",
+                color: "#ef4444",
+              }}
             >
               Logout
             </button>
@@ -225,27 +283,6 @@ export default function Header({
             </button>
           </>
         )}
-
-        {/* Theme */}
-        <button
-          onClick={onToggleTheme}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
-          style={{
-            background: "var(--bg-600)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          {theme === "dark" ? (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
-              <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </button>
       </div>
     </header>
   );

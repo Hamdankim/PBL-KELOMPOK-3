@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
@@ -11,7 +11,7 @@ import IrrigationModes from "@/components/IrrigationModes";
 import type { IrrigationEvent } from "@/lib/mockData";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { saveLog } from "@/utils/db/servicefirebase";
+import { saveLog, saveSensorSnapshot } from "@/utils/db/servicefirebase";
 import { useThemeMode } from "@/hooks/useThemeMode";
 import { defaultConfig } from "@/lib/configUtils";
 
@@ -20,6 +20,10 @@ import app, { db as realtimeDb } from "@/utils/db/firebase";
 import { ref, onValue, update } from "firebase/database";
 
 const firestoreDb = getFirestore(app);
+
+// Konstanta untuk deteksi status komponen
+const OFFLINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 menit tanpa data baru = mati
+const SNAPSHOT_INTERVAL_MS = 5 * 60 * 1000; // simpan snapshot setiap 5 menit
 
 export default function Dashboard() {
   const { data: session, status }: any = useSession();
@@ -34,8 +38,14 @@ export default function Dashboard() {
     waterLevelLCM: 0,
   });
   const [logs, setLogs] = useState<{ time: string; message: string; type: string }[]>([]);
-  const isOnline = true;
   const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
+
+  // --- Status komponen (menyala/mati) ---
+  // Jika Realtime DB tidak mengirim data BARU selama 5 menit → dianggap mati
+  const [isDeviceOnline, setIsDeviceOnline] = useState(false);
+  const lastSnapshotTimeRef = useRef<number>(0);
+  const prevSensorRef = useRef<string>(""); // untuk membandingkan apakah data berubah
+  const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sensorReady, setSensorReady] = useState(false);
   const [thresholdPopupOpen, setThresholdPopupOpen] = useState(false);
   const [lastAlertSignature, setLastAlertSignature] = useState<string>("");
@@ -107,6 +117,29 @@ export default function Dashboard() {
     }
   }, [threshold, thresholdAlerts.length, alertSignature, lastAlertSignature]);
 
+  // Helper: reset heartbeat timeout — setiap kali data baru masuk, timer di-reset.
+  // Jika timer habis (5 menit tanpa data baru), device dianggap OFFLINE.
+  const resetOfflineTimer = () => {
+    // Clear timer sebelumnya
+    if (offlineTimerRef.current) {
+      clearTimeout(offlineTimerRef.current);
+    }
+    // Set device online karena baru menerima data baru
+    setIsDeviceOnline(true);
+    // Mulai countdown: jika 5 menit tidak ada data baru → offline
+    offlineTimerRef.current = setTimeout(() => {
+      setIsDeviceOnline(false);
+      console.log("Komponen IoT terdeteksi MATI (tidak ada data baru selama 5 menit)");
+    }, OFFLINE_TIMEOUT_MS);
+  };
+
+  // Cleanup timer saat unmount
+  useEffect(() => {
+    return () => {
+      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
+    };
+  }, []);
+
   // Initialize data after hydration and setup real-time updates
   useEffect(() => {
     setIsHydrated(true);
@@ -116,6 +149,16 @@ export default function Dashboard() {
     const unsubSensor = onValue(smartPlantRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
+        // Buat fingerprint dari sensor values untuk mendeteksi apakah data benar-benar berubah
+        const fingerprint = `${data.soilMoisture}|${data.temperature}|${data.humidity}|${data.waterLevel}|${data.waterLevelCM}`;
+        const dataChanged = fingerprint !== prevSensorRef.current;
+        prevSensorRef.current = fingerprint;
+
+        // Hanya reset timer jika data BENAR-BENAR berubah (IoT aktif mengirim data baru)
+        if (dataChanged) {
+          resetOfflineTimer();
+        }
+
         setSensorReady(true);
         setSensorData({
           soilMoisture: data.soilMoisture ?? 0,
@@ -125,9 +168,27 @@ export default function Dashboard() {
           waterLevel: data.waterLevel ?? 0,
           waterLevelLCM: data.waterLevelCM ?? 0,
         });
+
         // Sync auto/manual mode from realtime DB (autoMode: true => AUTO)
         if (typeof data.autoMode !== "undefined") {
           setIrrigationMode(data.autoMode ? "AUTO" : "MANUAL");
+        }
+
+        // Auto-save snapshot ke Firestore setiap 5 menit (hanya jika data berubah = komponen menyala)
+        if (dataChanged) {
+          const now = Date.now();
+          if (now - lastSnapshotTimeRef.current >= SNAPSHOT_INTERVAL_MS) {
+            lastSnapshotTimeRef.current = now;
+            saveSensorSnapshot({
+              soilMoisture: data.soilMoisture ?? 0,
+              temperature: data.temperature ?? 0,
+              humidity: data.humidity ?? 0,
+            }).then((res) => {
+              if (res.status) {
+                console.log("Sensor snapshot tersimpan ke Firestore");
+              }
+            });
+          }
         }
       }
     });
@@ -192,65 +253,64 @@ export default function Dashboard() {
 
 
   const handlePumpToggle = async (state: boolean) => {
-  try {
-    const now = new Date();
+    try {
+      const now = new Date();
 
-    const timeStr = now.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+      const timeStr = now.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
 
-    const message = state
-      ? "Pompa dihidupkan (AKTIF)"
-      : "Pompa dimatikan (NON-AKTIF)";
+      const message = state
+        ? "Pompa dihidupkan (AKTIF)"
+        : "Pompa dimatikan (NON-AKTIF)";
 
-    const newLog = {
-      time: timeStr,
-      message,
-      type: "pump",
-    };
-
-    setLogs((prev) => [newLog, ...prev].slice(0, 20));
-
-    // Simpan log ke Firestore
-    await saveLog({
-      message,
-      type: "pump",
-      timestamp: now,
-    });
-
-    // Kirim status pompa ke Realtime Database
-    await update(ref(realtimeDb, "SmartPlant"), {
-      pumpStatus: state,
-    });
-
-    // Update tampilan dashboard secara langsung
-    setSensorData((prev) => ({
-      ...prev,
-      pumpStatus: state ? "AKTIF" : "NON-AKTIF",
-    }));
-
-    // Tambah event irigasi saat pompa dinyalakan
-    if (state) {
-      const newEvent: IrrigationEvent = {
-        timestamp: now,
-        duration: 5,
-        type: "quick",
+      const newLog = {
+        time: timeStr,
+        message,
+        type: "pump",
       };
 
-      setIrrigationEvents((prev) => [...prev, newEvent]);
-    }
+      setLogs((prev) => [newLog, ...prev].slice(0, 20));
 
-    console.log(
-      `Pump status berhasil dikirim ke Firebase: ${
-        state ? "AKTIF" : "NON-AKTIF"
-      }`
-    );
-  } catch (error) {
-    console.error("Gagal mengubah status pompa:", error);
-  }
-};
+      // Simpan log ke Firestore
+      await saveLog({
+        message,
+        type: "pump",
+        timestamp: now,
+      });
+
+      // Kirim status pompa ke Realtime Database
+      await update(ref(realtimeDb, "SmartPlant"), {
+        pumpStatus: state,
+      });
+
+      // Update tampilan dashboard secara langsung
+      setSensorData((prev) => ({
+        ...prev,
+        pumpStatus: state ? "AKTIF" : "NON-AKTIF",
+      }));
+
+      // Tambah event irigasi saat pompa dinyalakan
+      if (state) {
+        const newEvent: IrrigationEvent = {
+          timestamp: now,
+          duration: 5,
+          type: "quick",
+        };
+
+        setIrrigationEvents((prev) => [...prev, newEvent]);
+      }
+
+      console.log(
+        `Pump status berhasil dikirim ke Firebase: ${state ? "AKTIF" : "NON-AKTIF"
+        }`
+      );
+    } catch (error) {
+      console.error("Gagal mengubah status pompa:", error);
+    }
+  };
 
   const handleQuickAction = async (action: string) => {
     const now = new Date();
@@ -329,7 +389,7 @@ export default function Dashboard() {
           style={{ background: "var(--bg-900)" }}
           suppressHydrationWarning
         >
-          <Header theme={theme} onToggleTheme={toggleTheme} isOnline={isOnline} />
+          <Header theme={theme} onToggleTheme={toggleTheme} isOnline={isDeviceOnline} />
 
           <main className="px-4 pb-8 pt-2 max-w-7xl mx-auto" suppressHydrationWarning>
             {/* Sensor Cards Row */}
@@ -357,10 +417,10 @@ export default function Dashboard() {
 
             {/* Stats + Log Row */}
             {isHydrated && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 items-start">
-              <IrrigationTracking irrigationData={irrigationEvents} />
-              <ActivityLog logs={logs} />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 items-start">
+                <IrrigationTracking irrigationData={irrigationEvents} />
+                <ActivityLog logs={logs} />
+              </div>
             )}
 
             {/* Water Availability */}

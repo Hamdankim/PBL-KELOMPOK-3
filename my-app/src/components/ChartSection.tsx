@@ -12,7 +12,7 @@ import {
   ReferenceDot,
   ResponsiveContainer,
 } from "recharts";
-import { generateChartData } from "@/lib/mockData";
+import { getSensorHistory } from "@/utils/db/servicefirebase";
 import HistoriKelembabanUdaraCard from "@/components/HistoriKelembabanUdaraCard";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -30,7 +30,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <p style={{ color: "var(--text-muted)" }}>{label}</p>
         {payload.map((p: any) => (
           <p key={p.name} style={{ color: p.color }}>
-            {p.name}: {p.value}{p.name === "kelembaban" ? "%" : "°C"}
+            {p.name}: {p.value}{p.name === "kelembaban" ? "%" : p.name === "kelembabanUdara" ? "%" : "°C"}
           </p>
         ))}
       </div>
@@ -72,7 +72,8 @@ export default function ChartSection({ data, irrigationEvents }: ChartSectionPro
     watering?: number;
   };
 
-  const [chartData, setChartData] = useState<LocalChartRow[]>(generateChartData() as any);
+  const [chartData, setChartData] = useState<LocalChartRow[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
   // Keep latest irrigation events in a ref for interval checks
   const irrigationRef = useRef<any[]>([]);
@@ -89,7 +90,46 @@ export default function ChartSection({ data, irrigationEvents }: ChartSectionPro
     latestDataRef.current = data;
   }, [data]);
 
+  // Load initial chart data dari Firestore (6 jam terakhir)
   useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const history = await getSensorHistory(1); // ambil 1 hari terakhir
+        if (history && history.length > 0) {
+          const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+          const recentHistory = history.filter((item) => {
+            const ts = item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
+            return ts >= sixHoursAgo;
+          });
+
+          const mapped: LocalChartRow[] = recentHistory.map((item) => {
+            const ts = item.timestamp instanceof Date ? item.timestamp : new Date(item.timestamp);
+            return {
+              time: ts.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+              kelembaban: item.soilMoisture ?? 0,
+              suhu: item.temperature ?? 0,
+              kelembabanUdara: item.humidity ?? 0,
+            };
+          });
+
+          if (mapped.length > 0) {
+            setChartData(mapped.slice(-15)); // tampilkan max 15 data points terakhir
+          }
+        }
+      } catch (error) {
+        console.error("Error loading chart history:", error);
+      } finally {
+        setHistoryLoaded(true);
+      }
+    };
+
+    loadHistory();
+  }, []);
+
+  // Push data realtime setiap 5 detik
+  useEffect(() => {
+    if (!historyLoaded) return;
+
     const interval = setInterval(() => {
       setChartData((prev) => {
         const newData = [...prev];
@@ -112,7 +152,7 @@ export default function ChartSection({ data, irrigationEvents }: ChartSectionPro
       });
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [historyLoaded]);
 
   const handleKelembapanClick = () => {
     router.push('/histori-kelembapan');
