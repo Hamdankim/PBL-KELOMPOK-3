@@ -10,6 +10,12 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import {
+  Droplets,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 // using inline svgs instead of lucide icons
 
 import {
