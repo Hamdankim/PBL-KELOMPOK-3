@@ -25,6 +25,7 @@ import {
   where,
   orderBy,
   onSnapshot,
+  doc,
 } from "firebase/firestore";
 import app from "../../utils/db/firebase";
 
@@ -98,10 +99,29 @@ const calculateStats = (data: SensorDataType[], timeRange: number) => {
   };
 };
 
-export default function ChartSuhu() {
+interface ChartSuhuProps {
+  timeRange: number;
+}
+
+export default function ChartSuhu({ timeRange }: ChartSuhuProps) {
   const [data, setData] = useState<SensorDataType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<number>(1);
+  const [analyticsData, setAnalyticsData] = useState<any | null>(null);
+
+  useEffect(() => {
+    const docId = timeRange === 1 ? "latest_1_day" : "latest_7_days";
+    const docRef = doc(db, "sensor_analytics", docId);
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setAnalyticsData(docSnap.data());
+      } else {
+        setAnalyticsData(null);
+      }
+    }, (err) => {
+      console.error("Error fetching sensor_analytics:", err);
+    });
+    return () => unsubscribe();
+  }, [timeRange]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -195,7 +215,17 @@ export default function ChartSuhu() {
   }, [timeRange]);
 
   const stats = calculateStats(data, timeRange);
-  const isDown = Number(stats.change) < 0;
+
+  // Ambil data dari sensor_analytics dengan fallback ke stats lokal jika belum termuat
+  const hasAnalytics = analyticsData && analyticsData.temperature;
+  const displayStats = {
+    max: hasAnalytics ? analyticsData.temperature.highest.toFixed(1) : stats.max,
+    min: hasAnalytics ? analyticsData.temperature.lowest.toFixed(1) : stats.min,
+    avg: hasAnalytics ? analyticsData.temperature.average.toFixed(1) : stats.avg,
+    change: hasAnalytics ? analyticsData.temperature.trend.changePercent.toFixed(1) : stats.change,
+    trend: hasAnalytics ? analyticsData.temperature.trend.trend : (Number(stats.change) < 0 ? "turun" : "naik"),
+  };
+  const isDown = displayStats.trend.toLowerCase() === "turun";
 
   return (
     <div
@@ -206,20 +236,6 @@ export default function ChartSuhu() {
         <h2 className="text-lg font-semibold">
           Suhu ({timeRange === 1 ? "24 Jam" : "7 Hari"})
         </h2>
-        <div className="flex bg-gray-700 rounded-lg p-1">
-          <button
-            onClick={() => setTimeRange(1)}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${timeRange === 1 ? "bg-orange-500 text-white" : "text-gray-400 hover:text-white"}`}
-          >
-            1 Hari
-          </button>
-          <button
-            onClick={() => setTimeRange(7)}
-            className={`px-3 py-1 text-sm rounded-md transition-colors ${timeRange === 7 ? "bg-orange-500 text-white" : "text-gray-400 hover:text-white"}`}
-          >
-            7 Hari
-          </button>
-        </div>
       </div>
 
       {isLoading ? (
@@ -265,20 +281,20 @@ export default function ChartSuhu() {
                     <Thermometer className="w-4 h-4 text-red-500" /> Suhu
                     Tertinggi
                   </td>
-                  <td>{stats.max} °C</td>
+                  <td>{displayStats.max} °C</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
                     <Snowflake className="w-4 h-4 text-blue-400" /> Suhu
                     Terendah
                   </td>
-                  <td>{stats.min} °C</td>
+                  <td>{displayStats.min} °C</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-orange-400" /> Rata-rata
                   </td>
-                  <td>{stats.avg} °C</td>
+                  <td>{displayStats.avg} °C</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
@@ -296,7 +312,7 @@ export default function ChartSuhu() {
                       ) : (
                         <TrendingUp className="w-4 h-4 text-red-400" />
                       )}
-                      {stats.change}%
+                      {displayStats.change}%
                     </div>
                     <div className="text-xs text-gray-400">
                       {timeRange === 1
