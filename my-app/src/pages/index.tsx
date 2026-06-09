@@ -11,17 +11,18 @@ import type { IrrigationEvent } from "@/lib/mockData";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { saveLog } from "@/utils/db/servicefirebase";
+import { useThemeMode } from "@/hooks/useThemeMode";
 
-import { getFirestore, collection, query, orderBy, limit, where, onSnapshot, getDocs } from "firebase/firestore";
+import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import app, { db as realtimeDb } from "@/utils/db/firebase";
-import { ref, onValue, set, update } from "firebase/database";
+import { ref, onValue, update } from "firebase/database";
 
 const firestoreDb = getFirestore(app);
 
 export default function Dashboard() {
   const { data: session, status }: any = useSession();
   const router = useRouter();
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { theme, toggleTheme } = useThemeMode();
   const [sensorData, setSensorData] = useState({
     soilMoisture: 0,
     temperature: 0,
@@ -31,7 +32,7 @@ export default function Dashboard() {
     waterLevelLCM: 0,
   });
   const [logs, setLogs] = useState<{ time: string; message: string; type: string }[]>([]);
-  const [isOnline, setIsOnline] = useState(true);
+  const isOnline = true;
   const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
 
   // Expose latest irrigation events to ChartSection via a lightweight global
@@ -48,7 +49,6 @@ export default function Dashboard() {
 
   // State untuk threshold konfigurasi
   const [threshold, setThreshold] = useState<any>(null);
-  const [thresholdLoading, setThresholdLoading] = useState(true);
 
   // Ambil threshold dari API saat halaman dimount
   useEffect(() => {
@@ -61,8 +61,6 @@ export default function Dashboard() {
         }
       } catch (err) {
         // Optional: handle error
-      } finally {
-        setThresholdLoading(false);
       }
     };
     fetchThreshold();
@@ -71,9 +69,6 @@ export default function Dashboard() {
   // Contoh logika: warning jika soilMoisture < min atau > max
   const showMoistureWarning = threshold && sensorData && (sensorData.soilMoisture < threshold.soilMoistureMin || sensorData.soilMoisture > threshold.soilMoistureMax);
   const showTempWarning = threshold && sensorData && (sensorData.temperature < threshold.temperatureMin || sensorData.temperature > threshold.temperatureMax);
-  const showAlert = threshold && sensorData && (sensorData.soilMoisture > threshold.alertThreshold);
-
-
 
   // Initialize data after hydration and setup real-time updates
   useEffect(() => {
@@ -157,10 +152,6 @@ export default function Dashboard() {
     };
   }, []);
 
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
 
   const handlePumpToggle = async (state: boolean) => {
   try {

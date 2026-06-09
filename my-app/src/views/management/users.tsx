@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
+import { useThemeMode } from "@/hooks/useThemeMode";
 
 type UserRole = "Operator" | "Viewer" | "Admin";
 type UserStatus = "Aktif" | "Nonaktif";
@@ -53,7 +54,7 @@ function normalizeStatus(value?: string): UserStatus {
 }
 
 export default function Users() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { theme, toggleTheme } = useThemeMode();
   const [isOnline] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,10 +80,6 @@ export default function Users() {
     color: "var(--text-primary)",
     fontFamily: "'Exo 2', sans-serif",
   } as const;
-
-  const toggleTheme = () => {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
-  };
 
   async function fetchUsers() {
     try {
