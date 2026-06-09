@@ -26,7 +26,7 @@ export default function ProfileView() {
     if (user) {
       const startingName = user.fullname || user.name || "";
       setName(startingName);
-      setRole(user.role || "Member");
+      setRole(user.role === "member" ? "Viewer" : user.role || "Viewer");
       setPreviewUrl(user.image || "/avatar-head.svg");
       initialName.current = startingName;
     }

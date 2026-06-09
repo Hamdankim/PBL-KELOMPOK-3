@@ -46,9 +46,9 @@ export async function signUp(userData: any, callback: Function) {
         return callback({ status: false, message: "Email sudah terdaftar" });
     }
 
-    // Hash password & set default data
-    userData.password = await bcrypt.hash(userData.password, 10);
-    userData.role = "member";
+        // Hash password & set default data
+        userData.password = await bcrypt.hash(userData.password, 10);
+        userData.role = "Viewer";
     userData.createdAt = new Date().toISOString();
 
     try {
@@ -87,7 +87,7 @@ export async function loginWithOAuth(userData: any, callback: any) {
             });
         } else {
             // User baru: simpan sebagai member
-            userData.role = "member";
+                userData.role = "Viewer";
             userData.createdAt = new Date().toISOString();
             await addDoc(collection(db, "users"), userData);
             callback({
