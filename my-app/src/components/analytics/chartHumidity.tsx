@@ -130,7 +130,7 @@ export default function ChartHumidity({ timeRange }: ChartHumidityProps) {
     pastDate.setDate(pastDate.getDate() - timeRange);
 
     const q = query(
-      collection(db, "sensorData"),
+      collection(db, "sensor_history"),
       where("timestamp", ">=", pastDate),
       orderBy("timestamp", "asc")
     );
