@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Sun, Moon, Droplets, ChevronDown } from "lucide-react";
+
 
 interface HeaderProps {
   theme: "dark" | "light";
@@ -53,7 +53,9 @@ export default function Header({
           className="w-9 h-9 rounded-lg flex items-center justify-center"
           style={{ background: "linear-gradient(135deg, #00e5a0, #00c8ff)" }}
         >
-          <Droplets className="w-5 h-5 text-white" />
+          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </div>
         <div>
           <h1
@@ -125,18 +127,20 @@ export default function Header({
 
         {/* Dropdown */}
         <div className="relative hidden md:block group">
-          <button
-            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:scale-105"
-            style={{
-              color: "var(--primary)",
-              border: "1px solid var(--border)",
-              background: "rgba(0, 229, 160, 0.08)",
-              fontFamily: "'Share Tech Mono', monospace",
-            }}
-          >
-            Manajemen
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
+            <button
+              className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition-all hover:scale-105"
+              style={{
+                color: "var(--primary)",
+                border: "1px solid var(--border)",
+                background: "rgba(0, 229, 160, 0.08)",
+                fontFamily: "'Share Tech Mono', monospace",
+              }}
+            >
+              Manajemen
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
 
           {/* FIX: hapus nested div yang tidak perlu */}
           <div
@@ -175,7 +179,7 @@ export default function Header({
         </Link>
 
         {/* Session */}
-        {session ? (
+          {session ? (
           <>
             <button
               onClick={() => router.push("/profile")}
@@ -232,9 +236,14 @@ export default function Header({
           }}
         >
           {theme === "dark" ? (
-            <Sun className="w-4 h-4" style={{ color: "var(--primary)" }} />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           ) : (
-            <Moon className="w-4 h-4" style={{ color: "var(--primary)" }} />
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           )}
         </button>
       </div>
