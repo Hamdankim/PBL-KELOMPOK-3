@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface LogEntry {
   time: string;
@@ -181,9 +180,13 @@ export default function ActivityDetail({ logs = [] }: ActivityDetailProps) {
             </span>
           </div>
           {isExpanded ? (
-            <ChevronUp size={20} style={{ color: "var(--text-secondary)" }} />
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M18 15l-6-6-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           ) : (
-            <ChevronDown size={20} style={{ color: "var(--text-secondary)" }} />
+            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           )}
         </button>
 

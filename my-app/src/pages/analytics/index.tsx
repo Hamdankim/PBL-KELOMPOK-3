@@ -5,7 +5,7 @@ import ChartSuhu from "@/components/analytics/chartSuhu";
 import ChartHumidity from "@/components/analytics/chartHumidity";
 
 import BackToDashboard from "@/components/BackToDashboard";
-import { ArrowLeft, Activity, Calendar } from "lucide-react";
+// Inline svgs used to avoid lucide-react hydration issues
 
 // Import fungsi Firestore
 import { getFirestore, collection, addDoc } from "firebase/firestore";
@@ -110,7 +110,9 @@ export default function Analitik() {
                       : "bg-blue-600 hover:bg-blue-700 active:scale-95 text-white shadow-lg shadow-blue-900/20"
                   }`}
                 >
-                  <Activity className={`w-3 h-3 ${loadingType === "current" ? "animate-pulse" : ""}`} />
+                  <svg className={`w-3 h-3 ${loadingType === "current" ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   {loadingType === "current" ? "Mengirim..." : "Simulasi 6 Jam"}
                 </button>
 
@@ -123,7 +125,10 @@ export default function Analitik() {
                       : "bg-purple-600 hover:bg-purple-700 active:scale-95 text-white shadow-lg shadow-purple-900/20"
                   }`}
                 >
-                  <Calendar className={`w-3 h-3 ${loadingType === "history" ? "animate-pulse" : ""}`} />
+                  <svg className={`w-3 h-3 ${loadingType === "history" ? "animate-pulse" : ""}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   {loadingType === "history" ? "Mengirim..." : "Simulasi 6 Hari"}
                 </button>
               </div>

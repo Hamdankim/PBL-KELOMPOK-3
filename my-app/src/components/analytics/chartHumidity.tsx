@@ -10,12 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import {
-  Droplets,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+// using inline svgs instead of lucide icons
 
 import {
   getFirestore,
@@ -262,39 +257,53 @@ export default function ChartHumidity() {
               <tbody>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-blue-400" />
+                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Kelembaban Tertinggi
                   </td>
                   <td>{stats.max} %</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-sky-400" />
+                    <svg className="w-4 h-4 text-sky-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Kelembaban Terendah
                   </td>
                   <td>{stats.min} %</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-blue-400" /> Rata-rata
+                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
+                    </svg>
+                    Rata-rata
                   </td>
                   <td>{stats.avg} %</td>
                 </tr>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
                     {isDown ? (
-                      <TrendingDown className="w-4 h-4 text-red-400" />
+                      <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M17 13l-5 5-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
                     ) : (
-                      <TrendingUp className="w-4 h-4 text-green-400" />
-                    )}
-                    {' '}Tren
+                      <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M7 11l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}{' '}Tren
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
                       {isDown ? (
-                        <TrendingDown className="w-4 h-4 text-red-400" />
+                        <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="M17 13l-5 5-5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       ) : (
-                        <TrendingUp className="w-4 h-4 text-green-400" />
+                        <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <path d="M7 11l5-5 5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       )}
                       {stats.change}%
                     </div>
