@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Head from 'next/head';
 import Header from '@/components/Header';
 import WeeklyChart from '@/components/WeeklyChart';
+import { useThemeMode } from '@/hooks/useThemeMode';
 
 export default function HistoriKelembapan() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+  const { theme, toggleTheme } = useThemeMode();
 
   return (
     <>

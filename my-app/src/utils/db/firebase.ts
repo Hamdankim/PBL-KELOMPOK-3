@@ -14,30 +14,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const isFirebaseConfigured = Object.values(firebaseConfig).every(Boolean);
+// Cek apakah semua env Firebase tersedia
+export const isFirebaseConfigured = Object.values(firebaseConfig).every(
+  (value) => Boolean(value)
+);
 
-const resolvedFirebaseConfig = isFirebaseConfigured
-  ? firebaseConfig
-  : {
-    apiKey: "missing-api-key",
-    authDomain: "missing-auth-domain",
-    databaseURL: "https://missing-database-url",
-    projectId: "missing-project-id",
-    storageBucket: "missing-storage-bucket",
-    messagingSenderId: "missing-sender-id",
-    appId: "missing-app-id",
-  };
-
-if (!isFirebaseConfigured && typeof window === "undefined") {
-  console.warn(
-    "Firebase environment variables belum lengkap. Menggunakan konfigurasi placeholder agar build tetap berjalan."
-  );
-}
-
-const app = getApps().length ? getApp() : initializeApp(resolvedFirebaseConfig);
+// Jika app sudah ada gunakan yang lama,
+// jika belum maka inisialisasi Firebase
+const app = getApps().length
+  ? getApp()
+  : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getDatabase(app);
-export { firebaseConfig };
 
+export { firebaseConfig };
 export default app;

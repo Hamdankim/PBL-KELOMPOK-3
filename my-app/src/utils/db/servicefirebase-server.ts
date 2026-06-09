@@ -8,7 +8,10 @@ import {
     addDoc,
     where,
     updateDoc,
+    orderBy,
+    limit
 } from "firebase/firestore";
+import { getDatabase, ref as rtdbRef, get as getRTDB } from "firebase/database";
 import app, { isFirebaseConfigured } from "./firebase";
 import bcrypt from "bcryptjs";
 
@@ -98,5 +101,111 @@ export async function loginWithOAuth(userData: any, callback: any) {
             status: false,
             message: "Gagal memproses data Google",
         });
+    }
+}
+
+// BAGIAN SINKRONISASI SENSOR (RTDB ke Firestore)
+export const rtdb = getDatabase(app);
+
+// Normalisasi pumpStatus
+function normalizePumpStatus(value: any): string {
+    if (typeof value === "boolean") {
+        return value ? "AKTIF" : "NONAKTIF";
+    }
+
+    if (typeof value === "string") {
+        const v = value.trim().toUpperCase();
+        if (["AKTIF", "ON", "TRUE", "1"].includes(v)) return "AKTIF";
+        return "NONAKTIF";
+    }
+
+    if (typeof value === "number") {
+        return value === 1 ? "AKTIF" : "NONAKTIF";
+    }
+
+    return "NONAKTIF";
+}
+
+// Ambil data RTDB terbaru lalu simpan ke Firestore
+export async function syncLatestSensorDataFromRTDB(
+    rtdbPath: string = "/"
+) {
+    try {
+        // Ambil data RTDB
+        const snapshot = await getRTDB(rtdbRef(rtdb, rtdbPath));
+
+        if (!snapshot.exists()) {
+            return {
+                status: false,
+                message: "Data RTDB tidak ditemukan",
+            };
+        }
+
+        const rawData = snapshot.val();
+
+        // Ambil data terakhir Firestore
+        const q = query(
+            collection(db, "sensorData"),
+            orderBy("timestamp", "desc"),
+            limit(1)
+        );
+
+        const lastSnapshot = await getDocs(q);
+
+        const now = new Date();
+
+        // Cek apakah sudah 5 menit
+        if (!lastSnapshot.empty) {
+            const lastDoc = lastSnapshot.docs[0].data();
+
+            const lastTimestamp = lastDoc.timestamp?.toDate();
+
+            if (lastTimestamp) {
+                const diffMs = now.getTime() - lastTimestamp.getTime();
+
+                // 5 menit = 300000 ms
+                const fiveMinutes = 5 * 60 * 1000;
+
+                if (diffMs < fiveMinutes) {
+                    return {
+                        status: false,
+                        message: "Belum 5 menit sejak snapshot terakhir",
+                    };
+                }
+            }
+        }
+
+        // ==========================
+        // Data yang disimpan
+        // ==========================
+        const firestoreSensorData = {
+            humidity: Number(rawData?.humidity ?? 0),
+            pumpStatus: normalizePumpStatus(rawData?.pumpStatus),
+            soilMoisture: Number(rawData?.soilMoisture ?? 0),
+            temperature: Number(rawData?.temperature ?? 0),
+            timestamp: now,
+        };
+
+        // ==========================
+        // Simpan ke Firestore
+        // ==========================
+        const docRef = await addDoc(
+            collection(db, "sensorData"),
+            firestoreSensorData
+        );
+
+        return {
+            status: true,
+            message: "Snapshot sensor berhasil disimpan",
+            id: docRef.id,
+            data: firestoreSensorData,
+        };
+    } catch (error: any) {
+        console.error("Error sync sensor data:", error);
+
+        return {
+            status: false,
+            message: error.message || "Gagal sinkron data sensor",
+        };
     }
 }

@@ -1,22 +1,19 @@
-
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { Sliders, Droplets, Thermometer, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Sliders, Droplets, Thermometer, ArrowLeft } from "lucide-react";
 import InputField from "../../components/InputField";
 import Header from "../../components/Header";
 import { defaultConfig, validateConfig } from "../../lib/configUtils";
+import { useThemeMode } from "@/hooks/useThemeMode";
 
 const ConfigurationPage = () => {
   // State
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [isOnline] = useState(true);
+  const { theme, toggleTheme } = useThemeMode();
+  const isOnline = true;
   const [config, setConfig] = useState(defaultConfig);
   const [notif, setNotif] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Theme toggle
-  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
 
   // Ambil konfigurasi dari API saat halaman dibuka
   useEffect(() => {
@@ -45,6 +42,22 @@ const ConfigurationPage = () => {
     setConfig((prev) => ({ ...prev, [name]: Number(value) }));
   };
 
+  const showNotif = (
+    type: "success" | "error",
+    message: string
+  ) => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+
+    setNotif({ type, message });
+
+    setTimeout(() => {
+      setNotif(null);
+    }, 3000);
+  };
+  
   // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,12 +69,21 @@ const ConfigurationPage = () => {
         body: JSON.stringify(config),
       });
       if (res.ok) {
-        setNotif({ type: 'success', message: 'Konfigurasi berhasil disimpan!' });
+        showNotif(
+          "success",
+          "✓ Perubahan berhasil disimpan"
+        );
       } else {
-        setNotif({ type: 'error', message: 'Gagal menyimpan konfigurasi ke server.' });
+        showNotif(
+          "error",
+          "Gagal menyimpan konfigurasi ke server."
+        );
       }
     } catch {
-      setNotif({ type: 'error', message: 'Gagal menyimpan konfigurasi ke server.' });
+      showNotif(
+        "error",
+        "Gagal menyimpan konfigurasi ke server."
+      );
     }
   };
 
@@ -75,14 +97,28 @@ const ConfigurationPage = () => {
         body: JSON.stringify(defaultConfig),
       });
       if (res.ok) {
-        setNotif({ type: 'success', message: 'Konfigurasi dikembalikan ke default.' });
+        showNotif(
+          "success",
+          "✓ Konfigurasi dikembalikan ke default"
+        );
       } else {
-        setNotif({ type: 'error', message: 'Gagal reset konfigurasi ke server.' });
+        showNotif(
+          "error",
+          "Gagal reset konfigurasi ke server."
+        );
       }
     } catch {
       setNotif({ type: 'error', message: 'Gagal reset konfigurasi ke server.' });
     }
   };
+
+  const summaryTextColor = theme === "dark" ? "text-white" : "text-gray-900";
+  const inputTextColor = theme === "dark" ? "text-white" : "text-gray-900";
+
+  const inputBgColor =
+  theme === "dark"
+    ? "bg-gray-800 border-gray-600"
+    : "bg-gray-50 border-gray-300";
 
   return (
     <>
@@ -90,12 +126,12 @@ const ConfigurationPage = () => {
         <title>Konfigurasi Threshold - Smart Irrigation</title>
         <meta name="description" content="Pengaturan threshold irigasi cerdas" />
       </Head>
-      <div className={theme}>
+      <div className={theme} suppressHydrationWarning>
         <div className="min-h-screen transition-all duration-300" style={{ background: "var(--bg-900)" }}>
           <Header theme={theme} onToggleTheme={toggleTheme} isOnline={isOnline} />
           <main className="flex flex-col items-center justify-center min-h-[80vh] px-2 pt-6 md:pt-10">
             <div
-              className={`w-full max-w-2xl md:max-w-3xl rounded-2xl shadow-2xl p-4 md:p-8 border transition-colors duration-300
+              className={`w-full max-w-6xl rounded-3xl shadow-2xl p-6 md:p-10 border transition-colors duration-300
                 ${theme === "dark"
                   ? "bg-[var(--card-bg)] border-[var(--border)]"
                   : "bg-white border-gray-300"
@@ -112,9 +148,21 @@ const ConfigurationPage = () => {
                 </Link>
               </div>
               {/* Judul dan Icon */}
-              <div className="flex items-center gap-3 mb-6 mt-2">
-                <Sliders className="w-7 h-7 text-[var(--primary)]" />
-                <h2 className="text-2xl font-extrabold text-[var(--primary)] tracking-wide">Konfigurasi Threshold</h2>
+              <div className="mb-6">
+                <div className="flex items-center gap-3">
+                  <Sliders className="w-8 h-8 text-[var(--primary)]" />
+                  <div>
+                    <h2 className="text-3xl font-extrabold text-[var(--primary)] tracking-wide">
+                      Konfigurasi Sistem
+                    </h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                      <span className="text-sm text-green-400">
+                        Konfigurasi tersimpan di Firebase
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
               {/* Notifikasi */}
               {notif && (
@@ -126,8 +174,42 @@ const ConfigurationPage = () => {
                   {notif.message}
                 </div>
               )}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+                <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">                
+                  <p className={inputTextColor}>Kelembapan Tanah</p>
+                  <p className={`text-2xl font-bold mt-1 ${summaryTextColor}`}>
+                    {config.soilMoistureMin}% - {config.soilMoistureMax}%
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
+                  <p className={inputTextColor}>Suhu</p>
+                  <p className={`text-2xl font-bold mt-1 ${summaryTextColor}`}>
+                    {config.temperatureMin}° - {config.temperatureMax}°
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+                  <p className={inputTextColor}>Kelembapan Udara</p>
+                  <p className={`text-2xl font-bold mt-1 ${summaryTextColor}`}>
+                    {config.humidityMin}% - {config.humidityMax}%
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <p className={inputTextColor}>Air Tangki</p>
+                  <p className={`text-2xl font-bold mt-1 ${summaryTextColor}`}>
+                    Min {config.waterLevelMin}%
+                  </p>
+                </div>
+
+              </div>
               {/* Form konfigurasi */}
               <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+                <h3 className="text-lg font-bold text-cyan-400">
+                  Kelembapan Tanah
+                </h3>
                 <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                   <InputField
                     label="Kelembapan Tanah Minimum (%)"
@@ -135,12 +217,13 @@ const ConfigurationPage = () => {
                     value={config.soilMoistureMin}
                     onChange={handleChange}
                     icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-cyan-300" : "text-cyan-700"}`} />}
-                    colorClass={theme === "dark" ? "text-cyan-300" : "text-cyan-700"}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai minimum kelembapan tanah agar irigasi aktif."
                     description="Irigasi akan aktif jika kelembapan di bawah nilai ini."
                     min={0}
                     max={100}
+                    textColor={inputTextColor}
+                    inputClass={inputBgColor}
                   />
                   <InputField
                     label="Kelembapan Tanah Maksimum (%)"
@@ -148,14 +231,18 @@ const ConfigurationPage = () => {
                     value={config.soilMoistureMax}
                     onChange={handleChange}
                     icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-cyan-300" : "text-cyan-700"}`} />}
-                    colorClass={theme === "dark" ? "text-cyan-300" : "text-cyan-700"}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai maksimum kelembapan tanah agar irigasi berhenti."
                     description="Irigasi akan berhenti jika kelembapan di atas nilai ini."
                     min={0}
                     max={100}
+                    textColor={inputTextColor}
+                    inputClass={inputBgColor}
                   />
                 </div>
+                <h3 className="text-lg font-bold text-orange-400 mt-6">
+                  Suhu Lingkungan
+                </h3>
                 <div className="flex flex-col md:flex-row gap-4 md:gap-5">
                   <InputField
                     label="Suhu Minimum (°C)"
@@ -163,12 +250,13 @@ const ConfigurationPage = () => {
                     value={config.temperatureMin}
                     onChange={handleChange}
                     icon={<Thermometer className={`w-6 h-6 ${theme === "dark" ? "text-orange-300" : "text-orange-700"}`} />}
-                    colorClass={theme === "dark" ? "text-orange-300" : "text-orange-700"}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai suhu minimum yang diizinkan."
                     description="Sistem akan memberi peringatan jika suhu di bawah nilai ini."
                     min={-20}
                     max={100}
+                    textColor={inputTextColor}
+                    inputClass={inputBgColor}
                   />
                   <InputField
                     label="Suhu Maksimum (°C)"
@@ -176,26 +264,85 @@ const ConfigurationPage = () => {
                     value={config.temperatureMax}
                     onChange={handleChange}
                     icon={<Thermometer className={`w-6 h-6 ${theme === "dark" ? "text-orange-300" : "text-orange-700"}`} />}
-                    colorClass={theme === "dark" ? "text-orange-300" : "text-orange-700"}
                     className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
                     info="Nilai suhu maksimum yang diizinkan."
                     description="Sistem akan memberi peringatan jika suhu di atas nilai ini."
                     min={-20}
                     max={100}
+                    textColor={inputTextColor}
+                    inputClass={inputBgColor}
                   />
                 </div>
+                <h3 className="text-lg font-bold text-blue-400 mt-6">
+                  Kelembapan Udara
+                </h3>
+                <div className="flex flex-col md:flex-row gap-4 md:gap-5">
+                  <InputField
+                    label="Kelembapan Udara Minimum (%)"
+                    name="humidityMin"
+                    value={config.humidityMin}
+                    onChange={handleChange}
+                    icon={
+                      <Droplets
+                        className={`w-6 h-6 ${
+                          theme === "dark" ? "text-blue-300" : "text-blue-700"
+                        }`}
+                      />
+                    }
+                    className={
+                      theme === "dark"
+                        ? "bg-[var(--card-bg)] border-[var(--border)]"
+                        : "bg-white border-gray-300"
+                    }
+                    info="Batas minimum kelembapan udara."
+                    description="Peringatan jika udara terlalu kering."
+                    min={0}
+                    max={100}
+                    textColor={inputTextColor}
+                    inputClass={inputBgColor}
+                  />
+
+                  <InputField
+                    label="Kelembapan Udara Maksimum (%)"
+                    name="humidityMax"
+                    value={config.humidityMax}
+                    onChange={handleChange}
+                    icon={
+                      <Droplets
+                        className={`w-6 h-6 ${
+                          theme === "dark" ? "text-blue-300" : "text-blue-700"
+                        }`}
+                      />
+                    }
+                    className={
+                      theme === "dark"
+                        ? "bg-[var(--card-bg)] border-[var(--border)]"
+                        : "bg-white border-gray-300"
+                    }
+                    info="Batas maksimum kelembapan udara."
+                    description="Peringatan jika udara terlalu lembap."
+                    min={0}
+                    max={100}
+                    textColor={inputTextColor}
+                    inputClass={inputBgColor}
+                  />
+                </div>
+                <h3 className="text-lg font-bold text-emerald-400 mt-6">
+                  Air Tangki
+                </h3>
                 <InputField
-                  label="Ambang Batas Alert (%)"
-                  name="alertThreshold"
-                  value={config.alertThreshold}
+                  label="Ketinggian Air Tangki Minimum (%)"
+                  name="waterLevelMin"
+                  value={config.waterLevelMin}
                   onChange={handleChange}
-                  icon={<AlertTriangle className={`w-6 h-6 ${theme === "dark" ? "text-pink-300" : "text-pink-700"}`} />}
-                  colorClass={theme === "dark" ? "text-pink-300" : "text-pink-700"}
+                  icon={<Droplets className={`w-6 h-6 ${theme === "dark" ? "text-blue-300" : "text-blue-700"}`} />}
                   className={theme === "dark" ? "bg-[var(--card-bg)] border-[var(--border)]" : "bg-white border-gray-300"}
-                  info="Nilai deviasi maksimum sebelum sistem memberi peringatan."
-                  description="Jika nilai melebihi ambang ini, sistem akan memberi alert."
+                  info="Pompa akan berhenti jika level air di bawah nilai ini."
+                  description="Batas minimum level air tangki."
                   min={0}
                   max={100}
+                  textColor={inputTextColor}
+                  inputClass={inputBgColor}
                 />
                 <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-4">
                   <button type="submit" className="w-full md:w-1/2 py-2 rounded-lg bg-gradient-to-r from-cyan-400 to-green-400 text-white font-bold text-base md:text-lg shadow hover:scale-[1.03] transition-all">Simpan Konfigurasi</button>

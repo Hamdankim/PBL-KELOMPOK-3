@@ -3,15 +3,12 @@ import Head from 'next/head';
 import Header from '@/components/Header';
 import ActivityDetail from '@/components/ActivityDetail';
 import { getLogs } from '@/utils/db/servicefirebase';
+import { useThemeMode } from '@/hooks/useThemeMode';
 
 export default function LogAktivitas() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const { theme, toggleTheme } = useThemeMode();
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
 
   useEffect(() => {
     const fetchLogs = async () => {
