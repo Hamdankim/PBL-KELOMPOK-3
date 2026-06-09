@@ -33,27 +33,31 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       
       {/* Konten Modal */}
       <div 
-        className="card glow-border relative w-full max-w-md p-5 sm:p-6 shadow-2xl"
+        className="relative w-full max-w-md p-5 sm:p-6 shadow-2xl rounded-2xl border"
         style={{ 
+          background: "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(243,244,246,0.96))",
+          borderColor: "rgba(148, 163, 184, 0.35)",
+          color: "#0f172a",
           zIndex: 51,
-          animation: "modalFadeIn 0.2s ease-out forwards"
+          animation: "modalFadeIn 0.2s ease-out forwards",
+          boxShadow: "0 20px 60px rgba(15, 23, 42, 0.25)"
         }}
       >
         {/* Header Modal */}
-        <div className="flex items-center justify-between mb-5 border-b pb-3" style={{ borderColor: 'var(--border)' }}>
-          <h2 className="text-lg sm:text-xl font-bold glow-text" style={{ fontFamily: "'Exo 2', sans-serif" }}>
+        <div className="flex items-center justify-between mb-5 border-b pb-3" style={{ borderColor: 'rgba(148, 163, 184, 0.28)' }}>
+          <h2 className="text-lg sm:text-xl font-bold" style={{ fontFamily: "'Exo 2', sans-serif", color: '#0f172a' }}>
             {title}
           </h2>
           <button 
             onClick={onClose}
             className="p-1.5 rounded-lg transition-colors focus:outline-none"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: '#64748b' }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-primary)';
-              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.color = '#0f172a';
+              e.currentTarget.style.background = 'rgba(148,163,184,0.12)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted)';
+              e.currentTarget.style.color = '#64748b';
               e.currentTarget.style.background = 'transparent';
             }}
           >
@@ -62,7 +66,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
         </div>
         
         {/* Body Modal */}
-        <div className="mt-2 text-sm sm:text-base">
+        <div className="mt-2 text-sm sm:text-base" style={{ color: '#334155' }}>
           {children}
         </div>
       </div>

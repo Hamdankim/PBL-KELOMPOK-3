@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Header from "@/components/Header";
+import Modal from "@/components/Modal";
 import SensorCards from "@/components/SensorCards";
 import ChartSection from "@/components/ChartSection";
 import IrrigationTracking from "@/components/IrrigationTracking";
@@ -12,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { saveLog } from "@/utils/db/servicefirebase";
 import { useThemeMode } from "@/hooks/useThemeMode";
+import { defaultConfig } from "@/lib/configUtils";
 
 import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import app, { db as realtimeDb } from "@/utils/db/firebase";
@@ -34,6 +36,9 @@ export default function Dashboard() {
   const [logs, setLogs] = useState<{ time: string; message: string; type: string }[]>([]);
   const isOnline = true;
   const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
+  const [sensorReady, setSensorReady] = useState(false);
+  const [thresholdPopupOpen, setThresholdPopupOpen] = useState(false);
+  const [lastAlertSignature, setLastAlertSignature] = useState<string>("");
 
   // Expose latest irrigation events to ChartSection via a lightweight global
   useEffect(() => {
@@ -57,7 +62,7 @@ export default function Dashboard() {
         const res = await fetch("/api/config");
         if (res.ok) {
           const data = await res.json();
-          setThreshold(data);
+          setThreshold({ ...defaultConfig, ...(data ?? {}) });
         }
       } catch (err) {
         // Optional: handle error
@@ -67,8 +72,40 @@ export default function Dashboard() {
   }, []);
 
   // Contoh logika: warning jika soilMoisture < min atau > max
-  const showMoistureWarning = threshold && sensorData && (sensorData.soilMoisture < threshold.soilMoistureMin || sensorData.soilMoisture > threshold.soilMoistureMax);
-  const showTempWarning = threshold && sensorData && (sensorData.temperature < threshold.temperatureMin || sensorData.temperature > threshold.temperatureMax);
+  const showMoistureWarning = sensorReady && threshold && (sensorData.soilMoisture < threshold.soilMoistureMin || sensorData.soilMoisture > threshold.soilMoistureMax);
+  const showTempWarning = sensorReady && threshold && (sensorData.temperature < threshold.temperatureMin || sensorData.temperature > threshold.temperatureMax);
+  const showHumidityWarning = sensorReady && threshold && (sensorData.humidity < threshold.humidityMin || sensorData.humidity > threshold.humidityMax);
+  const showWaterLevelWarning = sensorReady && threshold && sensorData.waterLevel < threshold.waterLevelMin;
+
+  const thresholdAlerts = [
+    showMoistureWarning
+      ? `Kelembapan tanah berada di luar batas ${threshold.soilMoistureMin}% - ${threshold.soilMoistureMax}%. Saat ini ${sensorData.soilMoisture}%.`
+      : null,
+    showTempWarning
+      ? `Suhu berada di luar batas ${threshold.temperatureMin}°C - ${threshold.temperatureMax}°C. Saat ini ${sensorData.temperature}°C.`
+      : null,
+    showHumidityWarning
+      ? `Kelembapan udara berada di luar batas ${threshold.humidityMin}% - ${threshold.humidityMax}%. Saat ini ${sensorData.humidity}%.`
+      : null,
+    showWaterLevelWarning
+      ? `Level air tangki berada di bawah batas minimum ${threshold.waterLevelMin}%. Saat ini ${sensorData.waterLevel}%.`
+      : null,
+  ].filter(Boolean) as string[];
+
+  const alertSignature = thresholdAlerts.join("|");
+
+  useEffect(() => {
+    if (!threshold || thresholdAlerts.length === 0) {
+      setThresholdPopupOpen(false);
+      setLastAlertSignature("");
+      return;
+    }
+
+    if (alertSignature !== lastAlertSignature) {
+      setThresholdPopupOpen(true);
+      setLastAlertSignature(alertSignature);
+    }
+  }, [threshold, thresholdAlerts.length, alertSignature, lastAlertSignature]);
 
   // Initialize data after hydration and setup real-time updates
   useEffect(() => {
@@ -79,6 +116,7 @@ export default function Dashboard() {
     const unsubSensor = onValue(smartPlantRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
+        setSensorReady(true);
         setSensorData({
           soilMoisture: data.soilMoisture ?? 0,
           temperature: data.temperature ?? 0,
@@ -266,6 +304,25 @@ export default function Dashboard() {
         <title>Smart Irrigation System</title>
         <meta name="description" content="Dashboard monitoring sistem irigasi cerdas" />
       </Head>
+      <Modal
+        isOpen={thresholdPopupOpen}
+        onClose={() => setThresholdPopupOpen(false)}
+        title="Peringatan Threshold"
+      >
+        <div className="space-y-3" style={{ color: "#0f172a" }}>
+          <p>
+            Salah satu parameter sensor berada di luar konfigurasi threshold yang sudah ditentukan.
+          </p>
+          <ul className="space-y-2 list-disc pl-5">
+            {thresholdAlerts.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+          <p className="text-sm" style={{ color: "#64748b" }}>
+            Silakan cek sensor terkait atau sesuaikan nilai threshold di halaman konfigurasi.
+          </p>
+        </div>
+      </Modal>
       <div className={theme} suppressHydrationWarning>
         <div
           className="min-h-screen transition-all duration-300"
