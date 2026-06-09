@@ -191,20 +191,20 @@ export default function ChartHumidity() {
 
   return (
     <div
-      className="rounded-xl p-4 shadow-md text-white"
-      style={{ background: "var(--bg-800)" }}
+      className="rounded-xl p-4 shadow-md"
+      style={{ background: "var(--bg-800)", color: "var(--text-primary)" }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
           Kelembaban Udara ({timeRange === 1 ? "24 Jam" : "7 Hari"})
         </h2>
-        <div className="flex bg-gray-700 rounded-lg p-1">
+        <div className="flex rounded-lg p-1" style={{ background: "var(--bg-600)" }}>
           <button
             onClick={() => setTimeRange(1)}
             className={`px-3 py-1 text-sm rounded-md transition-colors ${
               timeRange === 1
                 ? "bg-blue-500 text-white"
-                : "text-gray-400 hover:text-white"
+                : "text-[var(--text-muted)]"
             }`}
           >
             1 Hari
@@ -214,7 +214,7 @@ export default function ChartHumidity() {
             className={`px-3 py-1 text-sm rounded-md transition-colors ${
               timeRange === 7
                 ? "bg-blue-500 text-white"
-                : "text-gray-400 hover:text-white"
+                : "text-[var(--text-muted)]"
             }`}
           >
             7 Hari
@@ -223,11 +223,11 @@ export default function ChartHumidity() {
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-[300px] text-gray-400">
+        <div className="flex items-center justify-center h-[300px]" style={{ color: "var(--text-muted)" }}>
           Memuat data...
         </div>
       ) : data.length === 0 ? (
-        <div className="flex items-center justify-center h-[300px] text-gray-400">
+        <div className="flex items-center justify-center h-[300px]" style={{ color: "var(--text-muted)" }}>
           Belum ada data sensor.
         </div>
       ) : (
@@ -252,9 +252,9 @@ export default function ChartHumidity() {
           </ResponsiveContainer>
 
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left" style={{ color: "var(--text-primary)" }}>
               <thead>
-                <tr className="border-b border-gray-600">
+                <tr className="border-b" style={{ borderColor: "var(--border)" }}>
                   <th className="py-2">Parameter</th>
                   <th>Nilai</th>
                 </tr>

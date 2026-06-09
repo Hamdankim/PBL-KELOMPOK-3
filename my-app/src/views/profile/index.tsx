@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import styles from "./profile.module.scss";
 import AvatarUploader from "../../components/AvatarUploader";
 import ReadOnlyField from "../../components/ReadOnlyField";
+import BackToDashboard from "../../components/BackToDashboard";
 
 export default function ProfileView() {
   const { data: session, status, update }: any = useSession();
@@ -101,16 +102,16 @@ export default function ProfileView() {
 
           <div className={styles.sidebarBottom}>
             <div className={styles.emailBadge}>{user?.email}</div>
-            <button
-              onClick={() => {
-                if (isDirty && !confirm("Belum disimpan. Yakin kembali?"))
-                  return;
-                router.back();
-              }}
+            <BackToDashboard
               className={styles.btnBack}
+              onClick={(e) => {
+                e.preventDefault();
+                if (isDirty && !confirm("Belum disimpan. Yakin kembali?")) return;
+                router.push("/");
+              }}
             >
               Kembali
-            </button>
+            </BackToDashboard>
           </div>
         </div>
 

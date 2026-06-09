@@ -86,7 +86,10 @@ export default function Analitik() {
             isOnline={isOnline}
           />
 
-          <main className="px-4 pb-8 pt-4 max-w-7xl mx-auto text-white">
+          <main
+            className="px-4 pb-8 pt-4 max-w-7xl mx-auto"
+            style={{ color: "var(--text-primary)" }}
+          >
             {/* Header Analitik dengan Tombol Simulasi */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               
@@ -146,7 +149,10 @@ export default function Analitik() {
               <ChartHumidity />
             </div>
             
-            <p className="mt-6 text-xs text-center text-gray-500 italic">
+            <p
+              className="mt-6 text-xs text-center italic"
+              style={{ color: "var(--text-muted)" }}
+            >
               *Klik simulasi untuk mengetes kalkulasi tren secara otomatis pada grafik.
             </p>
           </main>

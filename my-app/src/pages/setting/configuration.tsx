@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { Sliders, Droplets, Thermometer, ArrowLeft } from "lucide-react";
+import BackToDashboard from "../../components/BackToDashboard";
 import InputField from "../../components/InputField";
 import Header from "../../components/Header";
 import { defaultConfig, validateConfig } from "../../lib/configUtils";
@@ -143,9 +144,9 @@ const ConfigurationPage = () => {
               )}
               {/* Tombol Kembali */}
               <div className="mb-6">
-                <Link href="/" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-600)] border border-[var(--border)] text-sm text-[var(--primary)] font-semibold shadow hover:scale-105 transition-all">
+                <BackToDashboard className="bg-[var(--bg-600)] border-[var(--border)] text-sm text-[var(--primary)] shadow hover:scale-105 transition-all">
                   <ArrowLeft className="w-5 h-5" /> Dashboard
-                </Link>
+                </BackToDashboard>
               </div>
               {/* Judul dan Icon */}
               <div className="mb-6">
