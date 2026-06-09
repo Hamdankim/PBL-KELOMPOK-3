@@ -51,7 +51,7 @@ export default function Analitik() {
           soilMoisture: randomMoisture,
           humidity: Math.floor(Math.random() * (90 - 30 + 1)) + 30,
           temperature: Number(randomTemp),
-          pumpStatus: Math.random() > 0.5 ? "AKTIF" : "MATI",
+          pumpStatus: Math.random() > 0.5 ? "AKTIF" : "NONAKTIF",
           timestamp: targetDate,
         };
 
