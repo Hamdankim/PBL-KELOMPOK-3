@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
 import Header from "@/components/Header";
 import SensorCards from "@/components/SensorCards";
@@ -10,7 +10,7 @@ import IrrigationModes from "@/components/IrrigationModes";
 import type { IrrigationEvent } from "@/lib/mockData";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { saveLog } from "@/utils/db/servicefirebase";
+import { saveLog, saveSensorSnapshot } from "@/utils/db/servicefirebase";
 
 import { getFirestore, collection, query, orderBy, limit, where, onSnapshot, getDocs } from "firebase/firestore";
 import app, { db as realtimeDb } from "@/utils/db/firebase";
@@ -21,6 +21,9 @@ const firestoreDb = getFirestore(app);
 export default function Dashboard() {
   const { data: session, status }: any = useSession();
   const router = useRouter();
+
+  // Ref untuk tracking waktu terakhir snapshot disimpan ke Firestore
+  const lastSnapshotTimeRef = useRef<number>(0);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [sensorData, setSensorData] = useState({
     soilMoisture: 0,
@@ -74,14 +77,31 @@ export default function Dashboard() {
     const unsubSensor = onValue(smartPlantRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setSensorData({
+        const sensorValues = {
           soilMoisture: data.soilMoisture ?? 0,
           temperature: data.temperature ?? 0,
           humidity: data.humidity ?? 0,
           pumpStatus: data.pumpStatus ? "AKTIF" : "NON-AKTIF",
           waterLevel: data.waterLevel ?? 0,
           waterLevelLCM: data.waterLevelCM ?? 0,
-        });
+        };
+        setSensorData(sensorValues);
+
+        // Auto-save snapshot ke Firestore setiap 5 menit
+        const now = Date.now();
+        const FIVE_MINUTES = 5 * 60 * 1000;
+        if (now - lastSnapshotTimeRef.current >= FIVE_MINUTES) {
+          lastSnapshotTimeRef.current = now;
+          saveSensorSnapshot({
+            soilMoisture: sensorValues.soilMoisture,
+            temperature: sensorValues.temperature,
+            humidity: sensorValues.humidity,
+          }).then((res) => {
+            if (res.status) {
+              console.log("Sensor snapshot tersimpan ke Firestore");
+            }
+          });
+        }
       }
     });
 
