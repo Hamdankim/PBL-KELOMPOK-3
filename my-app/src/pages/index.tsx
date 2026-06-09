@@ -71,21 +71,21 @@ export default function Dashboard() {
     fetchThreshold();
   }, []);
 
-  // Contoh logika: warning jika soilMoisture < min atau > max
-  const showMoistureWarning = sensorReady && threshold && (sensorData.soilMoisture < threshold.soilMoistureMin || sensorData.soilMoisture > threshold.soilMoistureMax);
-  const showTempWarning = sensorReady && threshold && (sensorData.temperature < threshold.temperatureMin || sensorData.temperature > threshold.temperatureMax);
-  const showHumidityWarning = sensorReady && threshold && (sensorData.humidity < threshold.humidityMin || sensorData.humidity > threshold.humidityMax);
+  // Popup hanya muncul saat nilai turun di bawah batas minimum
+  const showMoistureWarning = sensorReady && threshold && sensorData.soilMoisture < threshold.soilMoistureMin;
+  const showTempWarning = sensorReady && threshold && sensorData.temperature < threshold.temperatureMin;
+  const showHumidityWarning = sensorReady && threshold && sensorData.humidity < threshold.humidityMin;
   const showWaterLevelWarning = sensorReady && threshold && sensorData.waterLevel < threshold.waterLevelMin;
 
   const thresholdAlerts = [
     showMoistureWarning
-      ? `Kelembapan tanah berada di luar batas ${threshold.soilMoistureMin}% - ${threshold.soilMoistureMax}%. Saat ini ${sensorData.soilMoisture}%.`
+      ? `Kelembapan tanah di bawah batas minimum ${threshold.soilMoistureMin}%. Saat ini ${sensorData.soilMoisture}%.`
       : null,
     showTempWarning
-      ? `Suhu berada di luar batas ${threshold.temperatureMin}°C - ${threshold.temperatureMax}°C. Saat ini ${sensorData.temperature}°C.`
+      ? `Suhu di bawah batas minimum ${threshold.temperatureMin}°C. Saat ini ${sensorData.temperature}°C.`
       : null,
     showHumidityWarning
-      ? `Kelembapan udara berada di luar batas ${threshold.humidityMin}% - ${threshold.humidityMax}%. Saat ini ${sensorData.humidity}%.`
+      ? `Kelembapan udara di bawah batas minimum ${threshold.humidityMin}%. Saat ini ${sensorData.humidity}%.`
       : null,
     showWaterLevelWarning
       ? `Level air tangki berada di bawah batas minimum ${threshold.waterLevelMin}%. Saat ini ${sensorData.waterLevel}%.`
@@ -311,7 +311,7 @@ export default function Dashboard() {
       >
         <div className="space-y-3" style={{ color: "#0f172a" }}>
           <p>
-            Salah satu parameter sensor berada di luar konfigurasi threshold yang sudah ditentukan.
+            Salah satu parameter sensor berada di bawah batas minimum yang sudah ditentukan.
           </p>
           <ul className="space-y-2 list-disc pl-5">
             {thresholdAlerts.map((message) => (
@@ -319,7 +319,7 @@ export default function Dashboard() {
             ))}
           </ul>
           <p className="text-sm" style={{ color: "#64748b" }}>
-            Silakan cek sensor terkait atau sesuaikan nilai threshold di halaman konfigurasi.
+            Sistem akan melakukan penyiraman otomatis saat kondisi ini muncul.
           </p>
         </div>
       </Modal>
