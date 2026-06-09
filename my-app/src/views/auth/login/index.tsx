@@ -40,8 +40,18 @@ const TampilanLogin = () => {
     }
   };
 
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const toggleTheme = () => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+
   return (
-    <div className={`${style.login} light`}>
+    <div className={`${style.login} ${theme}`}>
+      <button
+        aria-label="Toggle theme"
+        onClick={toggleTheme}
+        style={{ position: 'absolute', top: 16, right: 16, zIndex: 40, padding: 8, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)' }}
+      >
+        {theme === 'dark' ? '🌙' : '☀️'}
+      </button>
       <h1 className={style.login__title}>Halaman Login</h1>
 
       <div className={style.login__form}>
