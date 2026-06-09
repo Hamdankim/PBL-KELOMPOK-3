@@ -95,9 +95,7 @@ export default function Analitik() {
               
               {/* Sisi Kiri: Navigasi & Judul */}
               <div className="flex items-center gap-3">
-                <BackToDashboard className="p-2 rounded-lg transition-all hover:scale-110" style={{ background: "var(--bg-800)", border: "1px solid var(--border)" }}>
-                  <ArrowLeft className="w-4 h-4" style={{ color: "var(--primary)" }} />
-                </BackToDashboard>
+                <BackToDashboard className="p-2 rounded-lg transition-all hover:scale-110" style={{ background: "var(--bg-800)", border: "1px solid var(--border)" }} />
                 <h1 className="text-2xl font-bold">Analitik Sensor</h1>
               </div>
 
