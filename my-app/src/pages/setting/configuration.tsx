@@ -145,7 +145,7 @@ const ConfigurationPage = () => {
               {/* Tombol Kembali */}
               <div className="mb-6">
                 <BackToDashboard className="bg-[var(--bg-600)] border-[var(--border)] text-sm text-[var(--primary)] shadow hover:scale-105 transition-all">
-                  Dashboard
+                  Kembali ke Dashboard
                 </BackToDashboard>
               </div>
               {/* Judul dan Icon */}

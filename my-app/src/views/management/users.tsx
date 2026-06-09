@@ -266,7 +266,7 @@ export default function Users() {
                       background: "rgba(255, 255, 255, 0.04)",
                     }}
                   >
-                    ← Dashboard
+                    Kembali ke Dashboard
                   </BackToDashboard>
                   <button
                     onClick={openCreateModal}

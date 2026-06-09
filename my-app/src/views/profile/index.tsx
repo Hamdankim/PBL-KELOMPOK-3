@@ -110,7 +110,7 @@ export default function ProfileView() {
                 router.push("/");
               }}
             >
-              Kembali
+              Kembali ke Dashboard
             </BackToDashboard>
           </div>
         </div>
