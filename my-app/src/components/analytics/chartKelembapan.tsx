@@ -252,11 +252,11 @@ export default function ChartKelembapan({ timeRange }: ChartKelembapanProps) {
         <>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-              <XAxis dataKey="day" stroke="#888" tick={{ fontSize: 12 }} />
-              <YAxis stroke="#888" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="day" stroke="var(--text-muted)" tick={{ fontSize: 12 }} />
+              <YAxis stroke="var(--text-muted)" />
               <Tooltip
-                contentStyle={{ backgroundColor: "#333", borderColor: "#444" }}
+                contentStyle={{ backgroundColor: "var(--bg-800)", borderColor: "var(--border)" }}
                 itemStyle={{ color: "#22c55e" }}
               />
               <Line
@@ -316,7 +316,7 @@ export default function ChartKelembapan({ timeRange }: ChartKelembapanProps) {
                       )}
                       {displayStats.change}%
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-muted">
                       {timeRange === 1
                         ? "dibanding 6 jam yang lalu"
                         : "dibanding 6 hari yang lalu"}
