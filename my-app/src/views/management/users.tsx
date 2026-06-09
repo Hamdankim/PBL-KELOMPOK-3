@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import BackToDashboard from "@/components/BackToDashboard";
 import { useForm } from "react-hook-form";
 import Header from "@/components/Header";
 import Modal from "@/components/Modal";
@@ -258,8 +258,7 @@ export default function Users() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/"
+                  <BackToDashboard
                     className="btn-quick inline-flex items-center"
                     style={{
                       color: "var(--text-primary)",
@@ -267,8 +266,8 @@ export default function Users() {
                       background: "rgba(255, 255, 255, 0.04)",
                     }}
                   >
-                    ← Dashboard
-                  </Link>
+                    Kembali ke Dashboard
+                  </BackToDashboard>
                   <button
                     onClick={openCreateModal}
                     className="btn-quick inline-flex items-center"

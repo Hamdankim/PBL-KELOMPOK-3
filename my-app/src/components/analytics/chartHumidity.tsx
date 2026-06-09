@@ -10,12 +10,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import {
-  Droplets,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react";
+// using inline svgs instead of lucide icons
 
 import {
   getFirestore,
@@ -221,21 +216,21 @@ export default function ChartHumidity({ timeRange }: ChartHumidityProps) {
 
   return (
     <div
-      className="rounded-xl p-4 shadow-md text-white"
-      style={{ background: "var(--bg-800)" }}
+      className="rounded-xl p-4 shadow-md"
+      style={{ background: "var(--bg-800)", color: "var(--text-primary)" }}
     >
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
           Kelembaban Udara ({timeRange === 1 ? "24 Jam" : "7 Hari"})
         </h2>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-[300px] text-gray-400">
+        <div className="flex items-center justify-center h-[300px]" style={{ color: "var(--text-muted)" }}>
           Memuat data...
         </div>
       ) : data.length === 0 ? (
-        <div className="flex items-center justify-center h-[300px] text-gray-400">
+        <div className="flex items-center justify-center h-[300px]" style={{ color: "var(--text-muted)" }}>
           Belum ada data sensor.
         </div>
       ) : (
@@ -260,9 +255,9 @@ export default function ChartHumidity({ timeRange }: ChartHumidityProps) {
           </ResponsiveContainer>
 
           <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-sm text-left" style={{ color: "var(--text-primary)" }}>
               <thead>
-                <tr className="border-b border-gray-600">
+                <tr className="border-b" style={{ borderColor: "var(--border)" }}>
                   <th className="py-2">Parameter</th>
                   <th>Nilai</th>
                 </tr>
@@ -270,7 +265,9 @@ export default function ChartHumidity({ timeRange }: ChartHumidityProps) {
               <tbody>
                 <tr>
                   <td className="py-1 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-blue-400" />
+                    <svg className="w-4 h-4 text-blue-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M12 2.69s-5 5.81-5 9.81a5 5 0 0 0 10 0c0-4-5-9.81-5-9.81z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                     Kelembaban Tertinggi
                   </td>
                    <td>{displayStats.max} %</td>

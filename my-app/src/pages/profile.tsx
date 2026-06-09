@@ -1,12 +1,10 @@
 import Head from "next/head";
-import { useState } from "react";
 import Header from "@/components/Header";
 import ProfileView from "@/views/profile";
+import { useThemeMode } from "@/hooks/useThemeMode";
 
 export default function ProfilePage() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-
-  const toggleTheme = () => setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const { theme, toggleTheme } = useThemeMode();
 
   return (
     <>

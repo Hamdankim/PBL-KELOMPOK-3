@@ -1,5 +1,4 @@
 import React from "react";
-import { Info } from "lucide-react";
 
 interface InputFieldProps {
   label: string;
@@ -38,7 +37,11 @@ const InputField: React.FC<InputFieldProps> = ({
           {label}
         </label>
         <span title={info}>
-          <Info className={`w-3 h-3 ${textColor}`} />
+          <svg className={`w-3 h-3 ${textColor}`} viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M12 8v4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M12 16h.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </span>
       </div>
       <input
