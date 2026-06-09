@@ -11,6 +11,7 @@ import {
     setDoc,
     orderBy,
     limit,
+    Timestamp,
 } from "firebase/firestore";
 import app, { isFirebaseConfigured } from "./firebase";
 import { getDatabase as getRTDB, ref as rtdbRef, set as rtdbSet } from "firebase/database";
@@ -142,5 +143,64 @@ export async function setThresholdConfig(data: any) {
     } catch (error: any) {
         console.error("Error setting threshold config:", error);
         return { status: false, message: error.message };
+    }
+}
+
+// Simpan snapshot data sensor ke Firestore (untuk histori)
+export async function saveSensorSnapshot(data: {
+    soilMoisture: number;
+    temperature: number;
+    humidity: number;
+}) {
+    try {
+        if (!isFirebaseConfigured) {
+            return { status: false, message: "Firebase belum dikonfigurasi" };
+        }
+
+        const entry = {
+            soilMoisture: data.soilMoisture,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            timestamp: Timestamp.now(),
+            createdAt: new Date().toISOString(),
+        };
+        await addDoc(collection(db, "sensor_history"), entry);
+        return { status: true, message: "Sensor snapshot berhasil disimpan" };
+    } catch (error: any) {
+        console.error("Error saving sensor snapshot:", error);
+        return { status: false, message: error.message };
+    }
+}
+
+// Ambil histori data sensor dari Firestore untuk N hari terakhir
+export async function getSensorHistory(days: number = 7) {
+    try {
+        if (!isFirebaseConfigured) {
+            return [];
+        }
+
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        const startTimestamp = Timestamp.fromDate(startDate);
+
+        const q = query(
+            collection(db, "sensor_history"),
+            where("timestamp", ">=", startTimestamp),
+            orderBy("timestamp", "asc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        const history = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            soilMoisture: doc.data().soilMoisture,
+            temperature: doc.data().temperature,
+            humidity: doc.data().humidity,
+            timestamp: doc.data().timestamp?.toDate() || new Date(doc.data().createdAt),
+        }));
+
+        return history;
+    } catch (error: any) {
+        console.error("Error getting sensor history:", error);
+        return [];
     }
 }
