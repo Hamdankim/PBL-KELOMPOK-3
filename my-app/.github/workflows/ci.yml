@@ -1,0 +1,120 @@
+name: CI/CD Pipeline
+
+# Trigger: Kapan workflow ini dijalankan?
+on:
+  push:
+    branches: [ main, develop ]  # Saat push ke main/develop
+  pull_request:
+    branches: [ main, develop ]  # Saat buat/update pull request
+
+jobs:
+  # ========== JOB 1: TESTING ==========
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      # Test di multiple Node.js versions
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+      # Step 1: Download code dari repository
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js environment
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'  # Cache npm dependencies
+
+      # Step 3: Install dependencies
+      - name: 📦 Install dependencies
+        run: npm ci  # ci = clean install (lebih reliable dari npm install)
+
+      # Step 4: Run ESLint (code quality)
+      - name: 🔍 Run ESLint
+        run: npm run lint
+        continue-on-error: true  # Jangan stop jika lint warning
+
+      # Step 5: Run Jest unit tests dengan coverage report
+      - name: 🧪 Run unit tests with coverage
+        run: npm test -- --coverage --watchAll=false
+
+      # Step 6: Build aplikasi (check apakah build sukses)
+      - name: 🔨 Build application
+        run: npm run build
+
+      # Step 7: Upload coverage report ke Codecov (optional)
+      - name: 📊 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # ========== JOB 2: SECURITY AUDIT ==========
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      # Cek vulnerable packages
+      - name: 🔐 Run security audit
+        run: npm audit --production
+        continue-on-error: true
+
+  # ========== JOB 3: DEPLOYMENT (Optional) ==========
+  # Jobs ini hanya berjalan jika:
+  # - Job test & security PASS
+  # - Push ke branch main (bukan PR)
+  deploy:
+    name: Deploy to Production
+    needs: [test, security]  # Tunggu job test dan security selesai
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build application
+        run: npm run build
+
+      # CUSTOMIZE: Sesuaikan dengan platform deployment Anda
+      - name: 🚀 Deploy to production
+        run: |
+          echo "Deploying to production..."
+          # Contoh untuk Vercel:
+          # npm i -g vercel
+          # vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }}
+          
+          # Contoh untuk AWS:
+          # aws s3 sync ./out s3://my-bucket/
+          
+          # Contoh untuk Firebase:
+          # firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
