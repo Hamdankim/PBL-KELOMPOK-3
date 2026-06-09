@@ -111,7 +111,7 @@ export default function Analitik() {
                       />
                     </button>
                   </Link>
-                  <h1 className="text-2xl font-bold">Analitik Sensor</h1>
+                  <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Analitik Sensor</h1>
                 </div>
 
                 {/* Filter Global Rentang Waktu */}

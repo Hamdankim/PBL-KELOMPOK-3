@@ -129,7 +129,7 @@ export default function ChartSuhu({ timeRange }: ChartSuhuProps) {
     pastDate.setDate(pastDate.getDate() - timeRange);
 
     const q = query(
-      collection(db, "sensorData"),
+      collection(db, "sensor_history"),
       where("timestamp", ">=", pastDate),
       orderBy("timestamp", "asc"),
     );
