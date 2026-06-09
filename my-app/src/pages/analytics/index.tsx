@@ -4,7 +4,7 @@ import ChartKelembapan from "@/components/analytics/chartKelembapan";
 import ChartSuhu from "@/components/analytics/chartSuhu";
 import ChartHumidity from "@/components/analytics/chartHumidity";
 
-import Link from "next/link";
+import BackToDashboard from "@/components/BackToDashboard";
 import { ArrowLeft, Activity, Calendar } from "lucide-react";
 
 // Import fungsi Firestore
@@ -95,20 +95,9 @@ export default function Analitik() {
               
               {/* Sisi Kiri: Navigasi & Judul */}
               <div className="flex items-center gap-3">
-                <Link href="/">
-                  <button
-                    className="p-2 rounded-lg transition-all hover:scale-110"
-                    style={{
-                      background: "var(--bg-800)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
-                    <ArrowLeft
-                      className="w-4 h-4"
-                      style={{ color: "var(--primary)" }}
-                    />
-                  </button>
-                </Link>
+                <BackToDashboard className="p-2 rounded-lg transition-all hover:scale-110" style={{ background: "var(--bg-800)", border: "1px solid var(--border)" }}>
+                  <ArrowLeft className="w-4 h-4" style={{ color: "var(--primary)" }} />
+                </BackToDashboard>
                 <h1 className="text-2xl font-bold">Analitik Sensor</h1>
               </div>
 
