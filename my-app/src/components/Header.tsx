@@ -122,7 +122,7 @@ export default function Header({
             fontFamily: "'Share Tech Mono', monospace",
           }}
         >
-          Analytics
+          Analitik
         </Link>
 
         {/* Dropdown */}
