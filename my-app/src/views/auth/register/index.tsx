@@ -104,7 +104,7 @@ const TampilanRegister = () => {
           <br /> <br />
           <button
             type="button"
-            onClick={() => signIn("google", { callbackUrl: "/", redirect: false })}
+            onClick={() => signIn("google", { callbackUrl: "/dashboard", redirect: false })}
             className={style.login__form__item__button}
           >
             Sign up with Google

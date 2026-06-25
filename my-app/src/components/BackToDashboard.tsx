@@ -22,7 +22,7 @@ export default function BackToDashboard({ className = "", children, ariaLabel = 
 
   return (
     <Link
-      href="/"
+      href="/dashboard"
       aria-label={ariaLabel}
       className={`${defaultClass} ${className}`}
       style={styleDefaults}

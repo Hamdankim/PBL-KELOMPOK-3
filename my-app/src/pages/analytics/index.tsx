@@ -97,7 +97,7 @@ export default function Analitik() {
               {/* Sisi Kiri: Navigasi, Judul & Filter Global */}
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-3">
-                  <Link href="/">
+                  <Link href="/dashboard">
                     <button
                       className="p-2 rounded-lg transition-all hover:scale-110"
                       style={{

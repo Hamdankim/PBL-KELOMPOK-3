@@ -53,7 +53,7 @@ export default function Header({
       {/* Logo + Title */}
       <div
         className="flex items-center gap-3 cursor-pointer"
-        onClick={() => router.push("/")}
+        onClick={() => router.push(session ? "/dashboard" : "/")}
       >
         <div
           className="w-9 h-9 rounded-lg flex items-center justify-center"
