@@ -1,0 +1,433 @@
+import { useState, useEffect, useRef } from "react";
+import Head from "next/head";
+import Header from "@/components/Header";
+import Modal from "@/components/Modal";
+import SensorCards from "@/components/SensorCards";
+import ChartSection from "@/components/ChartSection";
+import IrrigationTracking from "@/components/IrrigationTracking";
+import ActivityLog from "@/components/ActivityLog";
+import WaterAvailability from "@/components/WaterAvailability";
+import IrrigationModes from "@/components/IrrigationModes";
+import type { IrrigationEvent } from "@/lib/mockData";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import { saveLog, saveSensorSnapshot } from "@/utils/db/servicefirebase";
+import { useThemeMode } from "@/hooks/useThemeMode";
+import { defaultConfig } from "@/lib/configUtils";
+
+import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import app, { db as realtimeDb } from "@/utils/db/firebase";
+import { ref, onValue, update } from "firebase/database";
+
+const firestoreDb = getFirestore(app);
+
+// Konstanta untuk deteksi status komponen
+const OFFLINE_TIMEOUT_MS = 5 * 60 * 1000; // 5 menit tanpa data baru = mati
+const SNAPSHOT_INTERVAL_MS = 5 * 60 * 1000; // simpan snapshot setiap 5 menit
+
+export default function Dashboard() {
+  const { data: session, status }: any = useSession();
+  const router = useRouter();
+  const { theme, toggleTheme } = useThemeMode();
+  const [sensorData, setSensorData] = useState({
+    soilMoisture: 0,
+    temperature: 0,
+    humidity: 0,
+    pumpStatus: "NON-AKTIF",
+    waterLevel: 0,
+    waterLevelLCM: 0,
+  });
+  const [logs, setLogs] = useState<{ time: string; message: string; type: string }[]>([]);
+  const [irrigationEvents, setIrrigationEvents] = useState<IrrigationEvent[]>([]);
+
+  // --- Status komponen (menyala/mati) ---
+  // Jika Realtime DB tidak mengirim data BARU selama 5 menit → dianggap mati
+  const [isDeviceOnline, setIsDeviceOnline] = useState(false);
+  const lastSnapshotTimeRef = useRef<number>(0);
+  const prevSensorRef = useRef<string>(""); // untuk membandingkan apakah data berubah
+  const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [sensorReady, setSensorReady] = useState(false);
+  const [thresholdPopupOpen, setThresholdPopupOpen] = useState(false);
+  const [lastAlertSignature, setLastAlertSignature] = useState<string>("");
+
+  // Expose latest irrigation events to ChartSection via a lightweight global
+  useEffect(() => {
+    try {
+      (window as any).__LATEST_IRR_EVENTS__ = irrigationEvents.map(ev => ({ timestamp: ev.timestamp }));
+    } catch (e) {
+      // ignore server-side or non-window environments
+    }
+  }, [irrigationEvents]);
+
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [irrigationMode, setIrrigationMode] = useState<"AUTO" | "MANUAL">("AUTO");
+
+  // State untuk threshold konfigurasi
+  const [threshold, setThreshold] = useState<any>(null);
+
+  // Ambil threshold dari API saat halaman dimount
+  useEffect(() => {
+    const fetchThreshold = async () => {
+      try {
+        const res = await fetch("/api/config");
+        if (res.ok) {
+          const data = await res.json();
+          setThreshold({ ...defaultConfig, ...(data ?? {}) });
+        }
+      } catch (err) {
+        // Optional: handle error
+      }
+    };
+    fetchThreshold();
+  }, []);
+
+  // Popup hanya muncul saat nilai turun di bawah batas minimum
+  const showMoistureWarning = sensorReady && threshold && sensorData.soilMoisture < threshold.soilMoistureMin;
+  const showTempWarning = sensorReady && threshold && sensorData.temperature < threshold.temperatureMin;
+  const showHumidityWarning = sensorReady && threshold && sensorData.humidity < threshold.humidityMin;
+  const showWaterLevelWarning = sensorReady && threshold && sensorData.waterLevel < threshold.waterLevelMin;
+
+  const thresholdAlerts = [
+    showMoistureWarning
+      ? `Kelembapan tanah di bawah batas minimum ${threshold.soilMoistureMin}%. Saat ini ${sensorData.soilMoisture}%.`
+      : null,
+    showTempWarning
+      ? `Suhu di bawah batas minimum ${threshold.temperatureMin}°C. Saat ini ${sensorData.temperature}°C.`
+      : null,
+    showHumidityWarning
+      ? `Kelembapan udara di bawah batas minimum ${threshold.humidityMin}%. Saat ini ${sensorData.humidity}%.`
+      : null,
+    showWaterLevelWarning
+      ? `Level air tangki berada di bawah batas minimum ${threshold.waterLevelMin}%. Saat ini ${sensorData.waterLevel}%.`
+      : null,
+  ].filter(Boolean) as string[];
+
+  const alertSignature = thresholdAlerts.join("|");
+
+  useEffect(() => {
+    if (!threshold || thresholdAlerts.length === 0) {
+      setThresholdPopupOpen(false);
+      setLastAlertSignature("");
+      return;
+    }
+
+    if (alertSignature !== lastAlertSignature) {
+      setThresholdPopupOpen(true);
+      setLastAlertSignature(alertSignature);
+    }
+  }, [threshold, thresholdAlerts.length, alertSignature, lastAlertSignature]);
+
+  // Helper: reset heartbeat timeout — setiap kali data baru masuk, timer di-reset.
+  // Jika timer habis (5 menit tanpa data baru), device dianggap OFFLINE.
+  const resetOfflineTimer = () => {
+    // Clear timer sebelumnya
+    if (offlineTimerRef.current) {
+      clearTimeout(offlineTimerRef.current);
+    }
+    // Set device online karena baru menerima data baru
+    setIsDeviceOnline(true);
+    // Mulai countdown: jika 5 menit tidak ada data baru → offline
+    offlineTimerRef.current = setTimeout(() => {
+      setIsDeviceOnline(false);
+      console.log("Komponen IoT terdeteksi MATI (tidak ada data baru selama 5 menit)");
+    }, OFFLINE_TIMEOUT_MS);
+  };
+
+  // Cleanup timer saat unmount
+  useEffect(() => {
+    return () => {
+      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
+    };
+  }, []);
+
+  // Initialize data after hydration and setup real-time updates
+  useEffect(() => {
+    setIsHydrated(true);
+
+    // 1) Subscribe latest sensor snapshot (from Realtime Database)
+    const smartPlantRef = ref(realtimeDb, 'SmartPlant');
+    const unsubSensor = onValue(smartPlantRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Buat fingerprint dari sensor values untuk mendeteksi apakah data benar-benar berubah
+        const fingerprint = `${data.soilMoisture}|${data.temperature}|${data.humidity}|${data.waterLevel}|${data.waterLevelCM}`;
+        const dataChanged = fingerprint !== prevSensorRef.current;
+        prevSensorRef.current = fingerprint;
+
+        // Hanya reset timer jika data BENAR-BENAR berubah (IoT aktif mengirim data baru)
+        if (dataChanged) {
+          resetOfflineTimer();
+        }
+
+        setSensorReady(true);
+        setSensorData({
+          soilMoisture: data.soilMoisture ?? 0,
+          temperature: data.temperature ?? 0,
+          humidity: data.humidity ?? 0,
+          pumpStatus: data.pumpStatus ? "AKTIF" : "NON-AKTIF",
+          waterLevel: data.waterLevel ?? 0,
+          waterLevelLCM: data.waterLevelCM ?? 0,
+        });
+
+        // Sync auto/manual mode from realtime DB (autoMode: true => AUTO)
+        if (typeof data.autoMode !== "undefined") {
+          setIrrigationMode(data.autoMode ? "AUTO" : "MANUAL");
+        }
+
+        // Auto-save snapshot ke Firestore setiap 5 menit (hanya jika data berubah = komponen menyala)
+        if (dataChanged) {
+          const now = Date.now();
+          if (now - lastSnapshotTimeRef.current >= SNAPSHOT_INTERVAL_MS) {
+            lastSnapshotTimeRef.current = now;
+            saveSensorSnapshot({
+              soilMoisture: data.soilMoisture ?? 0,
+              temperature: data.temperature ?? 0,
+              humidity: data.humidity ?? 0,
+            }).then((res) => {
+              if (res.status) {
+                console.log("Sensor snapshot tersimpan ke Firestore");
+              }
+            });
+          }
+        }
+      }
+    });
+
+    // 2) Subscribe latest logs (and derive irrigation events from logs)
+    const logsQ = query(
+      collection(firestoreDb, "logs"),
+      orderBy("timestamp", "desc"),
+      limit(200)
+    );
+
+    const unsubLogs = onSnapshot(logsQ, (snapshot) => {
+      const mapped = snapshot.docs.map((doc) => {
+        const d: any = doc.data();
+        const ts: Date = d.timestamp?.toDate?.() ?? new Date(d.createdAt ?? Date.now());
+        return {
+          time: ts.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+          message: d.message,
+          type: d.type,
+        };
+      });
+      setLogs(mapped);
+
+      // Derive irrigation events from logs (type pump/action)
+      const derived: IrrigationEvent[] = snapshot.docs
+        .map((doc) => {
+          const d: any = doc.data();
+          const ts: Date = d.timestamp?.toDate?.() ?? new Date(d.createdAt ?? Date.now());
+          const msg: string = String(d.message ?? "");
+          const type: string = String(d.type ?? "");
+
+          // Only convert relevant logs
+          if (type !== "pump" && type !== "action") return null;
+
+          // Pump on => quick (duration default)
+          if (type === "pump") {
+            if (msg.toLowerCase().includes("dihidupkan") || msg.toLowerCase().includes("aktif")) {
+              return { timestamp: ts, duration: 5, type: "quick" } as IrrigationEvent;
+            }
+            return null;
+          }
+
+          // Action => map by keywords (cepat/intensif/hemat)
+          const lower = msg.toLowerCase();
+          if (lower.includes("cepat")) return { timestamp: ts, duration: 5, type: "quick" } as IrrigationEvent;
+          if (lower.includes("intensif")) return { timestamp: ts, duration: 10, type: "intensive" } as IrrigationEvent;
+          if (lower.includes("hemat")) return { timestamp: ts, duration: 20, type: "water-saving" } as IrrigationEvent;
+          return null;
+        })
+        .filter(Boolean) as IrrigationEvent[];
+
+      // sort asc so filtering by date works properly
+      derived.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      setIrrigationEvents(derived);
+    });
+
+    return () => {
+      unsubSensor();
+      unsubLogs();
+    };
+  }, []);
+
+
+  const handlePumpToggle = async (state: boolean) => {
+    try {
+      const now = new Date();
+
+      const timeStr = now.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      const message = state
+        ? "Pompa dihidupkan (AKTIF)"
+        : "Pompa dimatikan (NON-AKTIF)";
+
+      const newLog = {
+        time: timeStr,
+        message,
+        type: "pump",
+      };
+
+      setLogs((prev) => [newLog, ...prev].slice(0, 20));
+
+      // Simpan log ke Firestore
+      await saveLog({
+        message,
+        type: "pump",
+        timestamp: now,
+      });
+
+      // Kirim status pompa ke Realtime Database
+      await update(ref(realtimeDb, "SmartPlant"), {
+        pumpStatus: state,
+      });
+
+      // Update tampilan dashboard secara langsung
+      setSensorData((prev) => ({
+        ...prev,
+        pumpStatus: state ? "AKTIF" : "NON-AKTIF",
+      }));
+
+      // Tambah event irigasi saat pompa dinyalakan
+      if (state) {
+        const newEvent: IrrigationEvent = {
+          timestamp: now,
+          duration: 5,
+          type: "quick",
+        };
+
+        setIrrigationEvents((prev) => [...prev, newEvent]);
+      }
+
+      console.log(
+        `Pump status berhasil dikirim ke Firebase: ${state ? "AKTIF" : "NON-AKTIF"
+        }`
+      );
+    } catch (error) {
+      console.error("Gagal mengubah status pompa:", error);
+    }
+  };
+
+  const handleQuickAction = async (action: string) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const newLog = { time: timeStr, message: action, type: "action" };
+    setLogs((prev) => [newLog, ...prev].slice(0, 20));
+
+    // Simpan log ke Firebase
+    await saveLog({ message: action, type: "action", timestamp: now });
+
+    // Add new irrigation event when irrigation mode is triggered
+    const eventType = action.includes("cepat")
+      ? "quick"
+      : action.includes("intensif")
+        ? "intensive"
+        : "water-saving";
+    const newEvent: IrrigationEvent = {
+      timestamp: new Date(),
+      duration: action.includes("intensif") ? 10 : action.includes("hemat") ? 20 : 5,
+      type: eventType as "quick" | "intensive" | "water-saving",
+    };
+    setIrrigationEvents((prev) => [...prev, newEvent]);
+    // Also send manual irrigation command to Realtime Database so IoT can act on it
+    try {
+      await update(ref(realtimeDb, "SmartPlant"), {
+        manualIrrigation: newEvent.duration,
+      });
+    } catch (err) {
+      console.error("Gagal mengirim perintah penyiraman manual ke Realtime DB:", err);
+    }
+  };
+  // --- Proteksi Login ---
+  // Jika belum login, redirect langsung ke halaman login
+  useEffect(() => {
+    if (status !== "loading" && !session) {
+      router.replace("/auth/login");
+    }
+  }, [status, session, router]);
+
+  // Tampilkan loader singkat saat status masih loading atau saat melakukan redirect
+  if (status === "loading" || !session) {
+    return (
+      <div style={{ padding: '5rem 2rem', textAlign: 'center', background: 'var(--bg-900)', minHeight: '100vh' }}>
+        <h1 className="glow-text">MEMUAT</h1>
+      </div>
+    );
+  }
+  return (
+    <>
+      <Head>
+        <title>Dashboard - Smart Irrigation System</title>
+        <meta name="description" content="Dashboard monitoring sistem irigasi cerdas" />
+      </Head>
+      <Modal
+        isOpen={thresholdPopupOpen}
+        onClose={() => setThresholdPopupOpen(false)}
+        title="Peringatan Threshold"
+      >
+        <div className="space-y-3" style={{ color: "#0f172a" }}>
+          <p>
+            Salah satu parameter sensor berada di bawah batas minimum yang sudah ditentukan.
+          </p>
+          <ul className="space-y-2 list-disc pl-5">
+            {thresholdAlerts.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
+          <p className="text-sm" style={{ color: "#64748b" }}>
+            Sistem akan melakukan penyiraman otomatis saat kondisi ini muncul.
+          </p>
+        </div>
+      </Modal>
+      <div className={theme} suppressHydrationWarning>
+        <div
+          className="min-h-screen transition-all duration-300"
+          style={{ background: "var(--bg-900)" }}
+          suppressHydrationWarning
+        >
+          <Header theme={theme} onToggleTheme={toggleTheme} isOnline={isDeviceOnline} />
+
+          <main className="px-4 pb-8 pt-2 max-w-7xl mx-auto" suppressHydrationWarning>
+            {/* Sensor Cards Row */}
+            <SensorCards
+              data={sensorData}
+              onPumpToggle={handlePumpToggle}
+              irrigationMode={irrigationMode}
+              onModeChange={async (m) => {
+                setIrrigationMode(m);
+                try {
+                  await update(ref(realtimeDb, "SmartPlant"), { autoMode: m === "AUTO" });
+                } catch (err) {
+                  console.error("Gagal mengupdate mode di Realtime DB:", err);
+                }
+              }}
+              manualContent={
+                isHydrated && irrigationMode === "MANUAL" ? (
+                  <IrrigationModes onAction={handleQuickAction} />
+                ) : null
+              }
+            />
+
+            {/* Charts Row */}
+            {isHydrated && <ChartSection data={sensorData} irrigationEvents={irrigationEvents} />}
+
+            {/* Stats + Log Row */}
+            {isHydrated && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 items-start">
+                <IrrigationTracking irrigationData={irrigationEvents} />
+                <ActivityLog logs={logs} />
+              </div>
+            )}
+
+            {/* Water Availability */}
+            {isHydrated && <WaterAvailability percentage={sensorData.waterLevel} />}
+          </main>
+        </div>
+      </div>
+    </>
+  );
+}

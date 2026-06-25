@@ -9,7 +9,7 @@ const TampilanLogin = () => {
   const [error, setError] = useState("");
 
   const { push, query } = useRouter();
-  const callbackUrl = (query.callbackUrl as string) || "/";
+  const callbackUrl = (query.callbackUrl as string) || "/dashboard";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
